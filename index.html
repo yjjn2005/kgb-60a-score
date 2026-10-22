@@ -300,8 +300,26 @@ function openScoreEditor(id){
   editingMatchId = id;
   document.getElementById("score-team-1").textContent = match.a.join(" · ");
   document.getElementById("score-team-2").textContent = match.b.join(" · ");
-  document.getElementById("score-value-1").value = scores.s1;
-  document.getElementById("score-value-2").value = scores.s2;
+  const one = document.getElementById("score-value-1");
+  const two = document.getElementById("score-value-2");
+  one.value = scores.s1;
+  two.value = scores.s2;
+  for (const input of [one, two]) {
+    input.dataset.zeroPending = input.value === "0" ? "true" : "false";
+    input.onfocus = () => {
+      if (input.dataset.zeroPending === "true" && input.value === "0") {
+        input.value = "";
+        input.dataset.zeroPending = "false";
+      } else {
+        input.select();
+      }
+    };
+    input.oninput = () => {
+      input.dataset.zeroPending = "false";
+      if (input.value.length > 1) input.value = input.value.replace(/^0+/, "") || "0";
+    };
+    input.onblur = () => { if (input.value === "") input.value = "0"; };
+  }
   document.getElementById("score-dialog").showModal();
 }
 function closeScoreEditor(){
