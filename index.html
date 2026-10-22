@@ -68,6 +68,21 @@
   }
   .donebtn.confirm{background:var(--navy2);color:#fff;}
   .donebtn.cancel{background:#fff;color:var(--navy2);border:2px solid var(--navy2);}
+  .edit-score-btn{width:100%;margin-top:10px;padding:14px 12px;border:2px solid var(--navy2);border-radius:14px;background:#fff;color:var(--navy2);font-size:18px;font-weight:800;cursor:pointer;touch-action:manipulation;}
+  .edit-score-btn:active{background:#e9eefb;}
+  dialog.score-dialog{width:min(94vw,440px);max-width:440px;padding:22px 18px;border:3px solid var(--gold);border-radius:20px;background:var(--cream);color:var(--ink);box-shadow:0 12px 40px rgba(0,0,0,.45);}
+  dialog.score-dialog::backdrop{background:rgba(5,14,30,.72);}
+  .score-dialog h2{margin:0 0 8px;text-align:center;color:var(--navy);font-size:24px;}
+  .score-dialog .dialog-help{text-align:center;margin:0 0 20px;font-size:17px;line-height:1.5;}
+  .score-inputs{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;}
+  .score-input-group{min-width:0;text-align:center;}
+  .score-input-group label{display:block;min-height:50px;font-size:16px;font-weight:700;line-height:1.35;}
+  .score-input-group input{width:100%;height:76px;border:3px solid var(--navy2);border-radius:14px;background:#fff;color:var(--navy);font-size:40px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;}
+  .score-dialog .dialog-vs{font-size:17px;font-weight:800;color:var(--gold2);}
+  .dialog-actions{display:flex;gap:10px;margin-top:22px;}
+  .dialog-actions button{flex:1;min-height:58px;border:0;border-radius:14px;font-size:19px;font-weight:800;cursor:pointer;touch-action:manipulation;}
+  .dialog-actions .cancel{background:#fff;color:var(--navy2);border:2px solid var(--navy2);}
+  .dialog-actions .save{background:var(--navy2);color:#fff;}
   .hint{text-align:center;color:#9fb0d0;font-size:13px;margin:6px 0 0;}
   table.rank{width:100%;border-collapse:collapse;font-size:17px;}
   table.rank th{background:var(--navy2);color:#fff;padding:10px 4px;font-size:15px;}
@@ -108,6 +123,20 @@
     <button id="tab-m" class="active" onclick="showView('m')">경기 기록</button>
     <button id="tab-r" onclick="showView('r')">순위표</button>
   </nav>
+
+  <dialog id="score-dialog" class="score-dialog" aria-labelledby="score-dialog-title">
+    <h2 id="score-dialog-title">최종 점수 입력</h2>
+    <p class="dialog-help">각 팀 점수를 입력한 뒤 확인을 눌러 주세요.<br>0점부터 99점까지 입력할 수 있어요.</p>
+    <div class="score-inputs">
+      <div class="score-input-group"><label id="score-team-1" for="score-value-1"></label><input id="score-value-1" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="99" step="1" required aria-label="첫 번째 팀 최종 점수"></div>
+      <span class="dialog-vs" aria-hidden="true">VS</span>
+      <div class="score-input-group"><label id="score-team-2" for="score-value-2"></label><input id="score-value-2" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="99" step="1" required aria-label="두 번째 팀 최종 점수"></div>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="cancel" onclick="closeScoreEditor()">취소</button>
+      <button type="button" class="save" onclick="applyScoreEditor()">확인 · 저장</button>
+    </div>
+  </dialog>
 
   <section id="view-m" class="view active">
     <div id="matches"></div>
@@ -263,6 +292,44 @@ function chScore(id, team, delta){
   renderAll();
   scheduleSave();
 }
+let editingMatchId = null;
+function openScoreEditor(id){
+  const match = MATCHES.find(x=>x.id===id);
+  if(!match) return;
+  const scores = state.matches[id];
+  editingMatchId = id;
+  document.getElementById("score-team-1").textContent = match.a.join(" · ");
+  document.getElementById("score-team-2").textContent = match.b.join(" · ");
+  document.getElementById("score-value-1").value = scores.s1;
+  document.getElementById("score-value-2").value = scores.s2;
+  document.getElementById("score-dialog").showModal();
+}
+function closeScoreEditor(){
+  document.getElementById("score-dialog").close();
+  editingMatchId = null;
+}
+function applyScoreEditor(){
+  if(!editingMatchId) return;
+  const one = document.getElementById("score-value-1");
+  const two = document.getElementById("score-value-2");
+  if(!one.reportValidity() || !two.reportValidity()) return;
+  const s1 = Number(one.value), s2 = Number(two.value);
+  if(!Number.isInteger(s1) || !Number.isInteger(s2) || s1<0 || s1>99 || s2<0 || s2>99){
+    one.setCustomValidity("0~99 사이의 정수를 입력해 주세요.");
+    one.reportValidity();
+    one.setCustomValidity("");
+    return;
+  }
+  const match = state.matches[editingMatchId];
+  match.s1 = s1; match.s2 = s2;
+  match.updatedAt = Date.now();
+  state.updatedAt = match.updatedAt;
+  document.getElementById("score-dialog").close();
+  editingMatchId = null;
+  renderAll();
+  scheduleSave();
+}
+
 function toggleDone(id){
   const m = state.matches[id];
   m.done = !m.done;
@@ -302,6 +369,7 @@ function renderMatches(){
           </div>
         </div>
       </div>
+      <button class="edit-score-btn" onclick="openScoreEditor('${x.id}')">최종점수 직접입력</button>
       <button class="donebtn ${m.done?'cancel':'confirm'}" onclick="toggleDone('${x.id}')">${m.done?'완료 취소 (점수 수정)':'경기 종료 확정'}</button>
     </div>`;
   }).join("");
