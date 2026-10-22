@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>KG클럽 60대 A조 친선대회 - 점수기록</title>
+<style>
+  :root{
+    --navy:#0e1f3d; --navy2:#16294d; --gold:#d4af37; --gold2:#b8962e;
+    --cream:#faf3e0; --cream2:#f3ead2; --ink:#1c2a45; --muted:#6b7a99;
+    --red:#c0392b; --green:#1e8e5a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%, #1b3159 0%, var(--navy) 55%, #0a1830 100%);
+    color:var(--cream); min-height:100vh; touch-action:manipulation;
+    padding-bottom:110px; word-break:keep-all;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:16px 10px 24px;}
+  header.top{
+    text-align:center; padding:18px 10px 14px; border-bottom:2px solid var(--gold);
+    margin-bottom:16px;
+  }
+  header.top h1{
+    margin:0 0 6px; font-size:26px; letter-spacing:-0.5px; color:var(--gold);
+    font-weight:800;
+  }
+  header.top .sub{font-size:16px; color:var(--cream); opacity:.92;}
+  header.top .upd{font-size:13px; color:#9fb0d0; margin-top:8px;}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:13px;margin-top:6px;color:#9fb0d0;}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .dot.on{background:#3ddc84;} .dot.off{background:#e74c3c;} .dot.save{background:var(--gold);}
+  .card{
+    background:var(--cream); color:var(--ink); border-radius:16px;
+    padding:16px 12px; margin-bottom:16px;
+    box-shadow:0 4px 14px rgba(0,0,0,.35); border:1px solid #e6d9b8;
+  }
+  .card.done{background:var(--cream2); border:1.5px solid var(--gold);}
+  .mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .mnum{font-size:18px;font-weight:800;color:var(--navy2);}
+  .badge{font-size:14px;font-weight:700;padding:4px 12px;border-radius:999px;}
+  .badge.play{background:#e9eefb;color:var(--navy2);}
+  .badge.fin{background:var(--gold);color:#3a2f05;}
+  .teams{display:flex;align-items:stretch;gap:4px;}
+  .team{flex:1;min-width:0;text-align:center;}
+  .team .names{font-size:18px;font-weight:700;min-height:52px;display:flex;flex-direction:column;justify-content:center;line-height:1.35;}
+  .vs{align-self:center;flex:none;font-weight:800;color:var(--gold2);font-size:15px;padding:0 2px;}
+  .score-row{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px;}
+  .sbtn{
+    flex:none;width:52px;height:60px;border-radius:14px;border:2px solid var(--navy2);
+    background:#fff;color:var(--navy2);font-size:30px;font-weight:800;line-height:1;
+    cursor:pointer; touch-action:manipulation;
+    -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;
+  }
+  .sbtn:active{background:var(--navy2);color:#fff;}
+  .sbtn:disabled{opacity:.25;cursor:default;}
+  .score{
+    flex:1;min-width:0;font-size:36px;font-weight:800;color:var(--navy);text-align:center;
+    font-variant-numeric:tabular-nums;
+  }
+  .score.win{color:var(--gold2);}
+  .donebtn{
+    width:100%;margin-top:14px;padding:17px;border:none;border-radius:14px;
+    font-size:19px;font-weight:800;cursor:pointer;touch-action:manipulation;
+  }
+  .donebtn.confirm{background:var(--navy2);color:#fff;}
+  .donebtn.cancel{background:#fff;color:var(--navy2);border:2px solid var(--navy2);}
+  .hint{text-align:center;color:#9fb0d0;font-size:13px;margin:6px 0 0;}
+  table.rank{width:100%;border-collapse:collapse;font-size:17px;}
+  table.rank th{background:var(--navy2);color:#fff;padding:10px 4px;font-size:15px;}
+  table.rank td{padding:12px 4px;text-align:center;border-bottom:1px solid #e2d7ba;font-variant-numeric:tabular-nums;}
+  table.rank tr:first-child td{border-top:none;}
+  table.rank .nm{font-weight:700;font-size:18px;}
+  table.rank .due{font-weight:700;color:#7a5c00;}
+  table.rank tr.r1 td{background:#fff6d8;font-weight:800;}
+  .rmedal{display:inline-block;min-width:26px;}
+  .ranknote{font-size:13px;color:#8a805f;margin-top:10px;text-align:center;}
+  nav.tabs{
+    position:fixed;left:0;right:0;bottom:0;display:flex;
+    background:var(--navy2);border-top:2px solid var(--gold);z-index:10;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav.tabs button{
+    flex:1;padding:17px 0 19px;font-size:19px;font-weight:800;border:none;
+    background:transparent;color:#8fa1c4;cursor:pointer;
+  }
+  nav.tabs button.active{color:var(--gold);background:rgba(212,175,55,.12);}
+  .view{display:none;} .view.active{display:block;}
+  @media (min-width:768px){
+    body{padding-bottom:24px;}
+    nav.tabs{position:static;max-width:720px;margin:0 auto 18px;border-radius:14px;overflow:hidden;border:1px solid var(--gold);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>KG클럽 60대 A조 친선대회</h1>
+    <div class="sub">2026.11.28 (토) 15:00 · 수도전기공고 체육관 1코트</div>
+    <div class="upd" id="upd">최종 업데이트: 불러오는 중…</div>
+    <div class="status"><span class="dot on" id="dot"></span><span id="stxt">연결됨</span></div>
+  </header>
+
+  <nav class="tabs">
+    <button id="tab-m" class="active" onclick="showView('m')">경기 기록</button>
+    <button id="tab-r" onclick="showView('r')">순위표</button>
+  </nav>
+
+  <section id="view-m" class="view active">
+    <div id="matches"></div>
+    <p class="hint">점수를 바꾸면 자동으로 저장되고, 다른 사람 화면에도 반영됩니다.</p>
+  </section>
+
+  <section id="view-r" class="view">
+    <div class="card">
+      <table class="rank">
+        <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th><th>득점</th><th>실점</th><th>득실</th><th>배정금액</th></tr></thead>
+        <tbody id="rankbody"></tbody>
+      </table>
+      <div class="ranknote">완료된 경기만 집계 · 순위 기준: 승수 → 승자승 → 득실차 → 총득점<br>배정금액: 총 500,000원을 순위별 배정 (1위도 납부, 순위가 낮을수록 많이)</div>
+    </div>
+  </section>
+</div>
+
+<script>
+const STORE_URL = "https://textdb.dev/api/data/kgb60a-1c385cb4cb62517f0165499d48d9c2a0";
+const POLL_MS = 3000;
+const PLAYERS = ["안재성","조성필","한승현","김기환","유재진","유현욱"];
+const MATCHES = [
+  {id:"m1", a:["안재성","조성필"], b:["한승현","김기환"]},
+  {id:"m2", a:["유재진","안재성"], b:["유현욱","김기환"]},
+  {id:"m3", a:["유재진","한승현"], b:["유현욱","조성필"]},
+  {id:"m4", a:["유현욱","한승현"], b:["안재성","김기환"]},
+  {id:"m5", a:["유재진","조성필"], b:["안재성","한승현"]},
+  {id:"m6", a:["유재진","유현욱"], b:["김기환","조성필"]},
+];
+// 순위별 배정금액 (단위: 원). 총 500,000원, 1위~6위 순서. 사용자 선택 후 ACTIVE_DUES를 1 또는 2로 확정.
+const DUES_OPTIONS = {1:[50000,60000,70000,90000,100000,130000], 2:[40000,50000,70000,90000,110000,140000]};
+const ACTIVE_DUES = 1; // 1안 확정: 1위 50,000 / 2위 60,000 / 3위 70,000 / 4위 90,000 / 5위 100,000 / 6위 130,000
+const LS_KEY = "kgb60a-state";
+const CID_KEY = "kgb60a-cid";
+let clientId = localStorage.getItem(CID_KEY);
+if(!clientId){ clientId = "c" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem(CID_KEY, clientId); }
+
+function emptyState(){
+  const m = {};
+  MATCHES.forEach(x => m[x.id] = {s1:0, s2:0, done:false, updatedAt:0});
+  return {app:"kgb-60a", updatedAt:0, clientId:"init", matches:m};
+}
+let state = emptyState();
+let dirty = false, saveTimer = null, online = true;
+
+try{
+  const cached = localStorage.getItem(LS_KEY);
+  if(cached){ const p = JSON.parse(cached); if(p && p.matches) state = normalize(p); }
+}catch(e){}
+
+function normalize(s){
+  const base = emptyState();
+  if(!s || !s.matches) return base;
+  base.updatedAt = s.updatedAt || 0; base.clientId = s.clientId || "";
+  MATCHES.forEach(x=>{
+    const v = s.matches[x.id] || {};
+    base.matches[x.id] = {s1:+v.s1||0, s2:+v.s2||0, done:!!v.done, updatedAt:+v.updatedAt||0};
+  });
+  return base;
+}
+
+function merge(remote){
+  const r = normalize(remote);
+  const out = emptyState();
+  let maxU = 0;
+  MATCHES.forEach(x=>{
+    const a = state.matches[x.id], b = r.matches[x.id];
+    out.matches[x.id] = (b.updatedAt >= a.updatedAt) ? b : a;
+    if(out.matches[x.id].updatedAt > maxU) maxU = out.matches[x.id].updatedAt;
+  });
+  out.updatedAt = Math.max(r.updatedAt, state.updatedAt, maxU);
+  out.clientId = clientId;
+  return out;
+}
+
+function setStatus(mode, txt){
+  const d = document.getElementById("dot");
+  d.className = "dot " + (mode==="on"?"on":mode==="save"?"save":"off");
+  document.getElementById("stxt").textContent = txt;
+}
+function fmtTime(ts){
+  if(!ts) return "-";
+  return new Date(ts).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:true});
+}
+function renderUpd(){
+  document.getElementById("upd").textContent = "최종 업데이트: " + fmtTime(state.updatedAt) +
+    (online ? "" : " (오프라인 - 이 기기에만 저장됨)");
+}
+
+async function fetchRemote(){
+  const res = await fetch(STORE_URL + "?t=" + Date.now(), {cache:"no-store"});
+  if(!res.ok) throw new Error("read " + res.status);
+  return await res.json();
+}
+async function pushRemote(s){
+  const res = await fetch(STORE_URL, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(s)});
+  if(!res.ok) throw new Error("write " + res.status);
+}
+
+async function poll(){
+  try{
+    const remote = await fetchRemote();
+    if(!online){ online = true; }
+    if(dirty){ setStatus("save","저장 중…"); return; }
+    if((remote.updatedAt||0) > state.updatedAt){
+      state = normalize(remote);
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      renderAll();
+    }
+    setStatus("on","연결됨");
+    renderUpd();
+  }catch(e){
+    online = false;
+    setStatus("off","오프라인 - 기기에만 저장");
+    renderUpd();
+  }
+}
+
+async function saveNow(){
+  dirty = false;
+  setStatus("save","저장 중…");
+  try{
+    const remote = await fetchRemote().catch(()=>null);
+    let merged = remote ? merge(remote) : state;
+    merged.updatedAt = Date.now(); merged.clientId = clientId;
+    await pushRemote(merged);
+    state = merged;
+    online = true;
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    setStatus("on","저장 완료 · 연결됨");
+    renderAll();
+  }catch(e){
+    online = false;
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    setStatus("off","오프라인 - 이 기기에만 저장됨");
+    renderUpd();
+  }
+}
+function scheduleSave(){
+  dirty = true;
+  setStatus("save","저장 중…");
+  if(saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveNow, 700);
+}
+
+function chScore(id, team, delta){
+  const m = state.matches[id];
+  if(m.done) return;
+  const k = team===1 ? "s1" : "s2";
+  m[k] = Math.max(0, Math.min(99, (m[k]||0) + delta));
+  m.updatedAt = Date.now();
+  state.updatedAt = m.updatedAt;
+  renderAll();
+  scheduleSave();
+}
+function toggleDone(id){
+  const m = state.matches[id];
+  m.done = !m.done;
+  m.updatedAt = Date.now();
+  state.updatedAt = m.updatedAt;
+  renderAll();
+  scheduleSave();
+}
+
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+function renderMatches(){
+  const el = document.getElementById("matches");
+  el.innerHTML = MATCHES.map((x,i)=>{
+    const m = state.matches[x.id];
+    const win1 = m.done && m.s1>m.s2, win2 = m.done && m.s2>m.s1;
+    return `<div class="card ${m.done?'done':''}">
+      <div class="mhead">
+        <span class="mnum">제 ${i+1} 경기</span>
+        <span class="badge ${m.done?'fin':'play'}">${m.done?'완료':'진행/대기'}</span>
+      </div>
+      <div class="teams">
+        <div class="team">
+          <div class="names">${x.a.map(esc).join("<br>")}</div>
+          <div class="score-row">
+            <button class="sbtn" data-m="${x.id}" data-t="1" data-d="-1" ${m.done?'disabled':''}>−</button>
+            <div class="score ${win1?'win':''}">${m.s1}</div>
+            <button class="sbtn" data-m="${x.id}" data-t="1" data-d="1" ${m.done?'disabled':''}>＋</button>
+          </div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="team">
+          <div class="names">${x.b.map(esc).join("<br>")}</div>
+          <div class="score-row">
+            <button class="sbtn" data-m="${x.id}" data-t="2" data-d="-1" ${m.done?'disabled':''}>−</button>
+            <div class="score ${win2?'win':''}">${m.s2}</div>
+            <button class="sbtn" data-m="${x.id}" data-t="2" data-d="1" ${m.done?'disabled':''}>＋</button>
+          </div>
+        </div>
+      </div>
+      <button class="donebtn ${m.done?'cancel':'confirm'}" onclick="toggleDone('${x.id}')">${m.done?'완료 취소 (점수 수정)':'경기 종료 확정'}</button>
+    </div>`;
+  }).join("");
+}
+
+function renderRank(){
+  const st = {};
+  PLAYERS.forEach(p => st[p] = {name:p, w:0, l:0, pf:0, pa:0});
+  MATCHES.forEach(x=>{
+    const m = state.matches[x.id];
+    if(!m.done || m.s1===m.s2) return;
+    const aWin = m.s1 > m.s2;
+    x.a.forEach(p=>{ st[p].pf+=m.s1; st[p].pa+=m.s2; aWin?st[p].w++:st[p].l++; });
+    x.b.forEach(p=>{ st[p].pf+=m.s2; st[p].pa+=m.s1; aWin?st[p].l++:st[p].w++; });
+  });
+  // 승자승: 두 선수가 서로 다른 팀으로 맞붙은 완료 경기의 승수 비교
+  function h2hDiff(p, q){
+    let pw=0, qw=0;
+    MATCHES.forEach(x=>{
+      const m = state.matches[x.id];
+      if(!m.done || m.s1===m.s2) return;
+      const p1=x.a.includes(p), p2=x.b.includes(p);
+      const q1=x.a.includes(q), q2=x.b.includes(q);
+      if((p1&&q2)||(p2&&q1)){
+        const win1 = m.s1>m.s2;
+        if((p1&&win1)||(p2&&!win1)) pw++; else qw++;
+      }
+    });
+    return pw-qw;
+  }
+  function cmpBasic(a,b){
+    const da=a.pf-a.pa, db=b.pf-b.pa;
+    if(db!==da) return db-da;
+    return b.pf-a.pf;
+  }
+  // 기본 정렬: 승수 → 득실차 → 총득점 (3명 이상 동률은 이 기준 그대로)
+  const rows = Object.values(st).sort((a,b)=> (b.w-a.w) || cmpBasic(a,b));
+  // 2명 동률 그룹만 승자승으로 재조정 (상대 전적 동률이면 득실차 순서 유지)
+  for(let i=0;i<rows.length-1;i++){
+    if(rows[i].w===rows[i+1].w && (i+2>=rows.length || rows[i+2].w!==rows[i].w) && (i===0 || rows[i-1].w!==rows[i].w)){
+      if(h2hDiff(rows[i].name, rows[i+1].name) < 0){
+        const t=rows[i]; rows[i]=rows[i+1]; rows[i+1]=t;
+      }
+    }
+  }
+  const dues = ACTIVE_DUES ? DUES_OPTIONS[ACTIVE_DUES] : null;
+  const medals = ["1위","2위","3위"];
+  document.getElementById("rankbody").innerHTML = rows.map((r,i)=>{
+    const diff = r.pf - r.pa;
+    const dueTxt = dues[i].toLocaleString("ko-KR") + "원";
+    return `<tr class="${i===0?'r1':''}">
+      <td><span class="rmedal">${medals[i]||(i+1)+"위"}</span></td>
+      <td class="nm">${esc(r.name)}</td><td>${r.w}</td><td>${r.l}</td>
+      <td>${r.pf}</td><td>${r.pa}</td><td>${diff>0?'+'+diff:diff}</td><td class="due">${dueTxt}</td>
+    </tr>`;
+  }).join("");
+}
+function renderAll(){ renderMatches(); renderRank(); renderUpd(); }
+
+// +/− 버튼: 탭은 1점, 길게 누르면 자동 연속 입력 (점수판이 다시 그려져도 동작하도록 문서 레벨에서 처리)
+let holdT1=null, holdT2=null;
+function stopHold(){ if(holdT1){clearTimeout(holdT1);holdT1=null;} if(holdT2){clearInterval(holdT2);holdT2=null;} }
+document.addEventListener("pointerdown", e=>{
+  const el = e.target.closest(".sbtn");
+  if(!el || el.disabled) return;
+  e.preventDefault();
+  const m=el.dataset.m, t=+el.dataset.t, d=+el.dataset.d;
+  stopHold();
+  chScore(m,t,d);
+  holdT1=setTimeout(()=>{ holdT2=setInterval(()=>chScore(m,t,d),110); },450);
+});
+document.addEventListener("pointerup", stopHold);
+document.addEventListener("pointercancel", stopHold);
+window.addEventListener("blur", stopHold);
+document.addEventListener("contextmenu", e=>{ if(e.target.closest(".sbtn")) e.preventDefault(); });
+
+function showView(v){
+  document.getElementById("view-m").classList.toggle("active", v==="m");
+  document.getElementById("view-r").classList.toggle("active", v==="r");
+  document.getElementById("tab-m").classList.toggle("active", v==="m");
+  document.getElementById("tab-r").classList.toggle("active", v==="r");
+  if(v==="r") renderRank();
+}
+if(location.hash === "#rank") showView("r");
+
+renderAll();
+poll();
+setInterval(poll, POLL_MS);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) poll(); });
+</script>
+</body>
+</html>
