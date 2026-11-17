@@ -130,7 +130,7 @@
 <div class="wrap">
   <header class="top">
     <h1>KG클럽 60대 A조 친선대회</h1>
-    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.8 · 2026-11-17</div>
+    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.9 · 2026-11-17</div>
     <div class="sub">2026.11.28 (토) 15:00 · 하남 덕풍배드민턴클럽</div>
     <div class="upd" id="upd">최종 업데이트: 불러오는 중…</div>
     <div class="status"><span class="dot on" id="dot"></span><span id="stxt">연결됨</span></div>
@@ -293,7 +293,7 @@ const MATCHES5 = [
 ];
 // 인원별 설정: 대진·기호·정산 비율
 // 금액 정산 규칙: 순위별 고정 비율, 총액 상한 50만원, 만원 단위(끝전 꼴찌 부담)
-// 6인 비율 2/10/15/20/23/30%는 2026-11-17 18:51 공지 적용분. 4/5인 비율은 동일한 친선 차등 구조의 권고안.
+// 6인 비율 2/12/15/20/23/28%: 2026-11-17 19:49 사용자 요청(1위 제외 2~6위 부담금 최대차 9만원 이내) 적용. 1위 2%와 4/5인 비율은 기존 유지.
 const MODES = {
   4: {slots:["A","B","C","D"], matches:MATCHES4, duePcts:[10,20,30,40],
       badge:"1인 3경기 · 총 3경기",
@@ -301,7 +301,7 @@ const MODES = {
   5: {slots:["A","B","C","D","E"], matches:MATCHES5, duePcts:[6,14,20,26,34],
       badge:"1인 4경기 · 총 5경기",
       note:'1인당 4경기(1경기 휴식)를 복식으로 뛰어요. <b>모든 2인 조합(10조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 \'경기 기록\' 탭의 같은 번호에 입력해요.'},
-  6: {slots:SLOTS, matches:MATCHES, duePcts:[2,10,15,20,23,30],
+  6: {slots:SLOTS, matches:MATCHES, duePcts:[2,12,15,20,23,28],
       badge:"1인 6경기 · 총 9경기",
       note:'1인당 6경기(3경기 휴식)씩 복식으로 뛰어요. <b>모든 2인 조합(15조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 \'경기 기록\' 탭의 같은 번호에 입력해요.'},
 };
@@ -420,7 +420,7 @@ function fmtTime(ts){
   if(!ts) return "-";
   return new Date(ts).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:true});
 }
-const APP_BUILD_TS = new Date("2026-11-17T19:34:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
+const APP_BUILD_TS = new Date("2026-11-17T19:51:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
 function renderUpd(){
   const ts = Math.max(state.updatedAt||0, APP_BUILD_TS);
   document.getElementById("upd").textContent = "최종 업데이트: " + fmtTime(ts) +
