@@ -116,7 +116,7 @@
 <div class="wrap">
   <header class="top">
     <h1>KG클럽 60대 A조 친선대회</h1>
-    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">버전 1.1 · 2026-11-17</div>
+    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">버전 1.2 · 2026-11-17</div>
     <div class="sub">2026.11.28 (토) 15:00 · 하남 덕풍배드민턴클럽</div>
     <div class="upd" id="upd">최종 업데이트: 불러오는 중…</div>
     <div class="status"><span class="dot on" id="dot"></span><span id="stxt">연결됨</span></div>
@@ -150,10 +150,10 @@
   <section id="view-r" class="view">
     <div class="card">
       <table class="rank">
-        <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th><th>득점</th><th>실점</th><th>득실</th><th>식대 부담금</th></tr></thead>
+        <thead><tr><th>이름</th><th>승</th><th>패</th><th>득점</th><th>실점</th><th>득실</th><th>순위</th></tr></thead>
         <tbody id="rankbody"></tbody>
       </table>
-      <div class="ranknote">완료된 경기만 집계 · 순위 기준: 승수 → 승자승 → 득실차 → 총득점<br>식대 부담금: '식대 정산' 탭의 총 식대 기준 자동 계산 (1위 1만원 고정, 6위 최대 10만원)</div>
+      <div class="ranknote" id="ranknote"></div>
     </div>
   </section>
 
@@ -161,7 +161,7 @@
     <div class="card">
       <div class="mhead"><span class="mnum">식대 정산</span><span class="badge play">만원 단위</span></div>
       <label for="meal-total" style="font-size:16px;font-weight:700;color:var(--navy2);">전체 식사금액 (원)</label>
-      <input id="meal-total" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1000"
+      <input id="meal-total" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
         style="width:100%;height:64px;margin-top:6px;border:3px solid var(--navy2);border-radius:14px;background:#fff;color:var(--navy);font-size:30px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;box-sizing:border-box;">
       <div style="display:flex;gap:6px;margin-top:8px;">
         <button class="chip" onclick="setMeal(300000)">30만</button>
@@ -169,11 +169,11 @@
         <button class="chip" onclick="setMeal(420000)">42만</button>
         <button class="chip" onclick="setMeal(500000)">50만</button>
       </div>
-      <div class="ranknote" style="text-align:left;margin-top:10px;">지금 보이는 420,000원은 테스트 금액이에요 (1인당 7만원 × 6명 가정). 실제 식대가 나오면 그 금액으로 바꿔 입력하세요. 입력한 금액은 이 기기에만 저장됩니다.</div>
+      <div class="ranknote" style="text-align:left;margin-top:10px;">지금 보이는 420,000원은 테스트 금액이에요 (1인당 7만원 × 6명 가정). 칸을 누르면 지워지니 실제 식대를 바로 입력하세요. 입력하는 즉시 다시 계산되고, 금액은 이 기기에만 저장됩니다.</div>
     </div>
 
     <div class="card">
-      <div class="mhead"><span class="mnum">순위별 부담금</span></div>
+      <div class="mhead"><span class="mnum" id="duehead">순위별 부담금</span></div>
       <table class="rank">
         <thead><tr><th>순위</th><th>부담금</th></tr></thead>
         <tbody id="duebody"></tbody>
@@ -189,7 +189,8 @@
         <tbody id="settlebody"></tbody>
       </table>
       <div id="settle-note" class="ranknote"></div>
-      <button class="edit-score-btn" id="copy-settle" onclick="copySettle()">결과 복사 (문자/카톡 붙여넣기용)</button>
+      <button class="edit-score-btn" id="share-settle" onclick="shareSettle()" style="background:var(--navy2);color:#fff;border-color:var(--navy2);">카카오톡으로 공유 (정산 내용 보내기)</button>
+      <button class="edit-score-btn" id="copy-settle" onclick="copySettle()">결과 복사 (직접 붙여넣기용)</button>
     </div>
   </section>
 </div>
@@ -511,29 +512,36 @@ function computeSettlement(totalWon){
   };
 }
 
+function getMealRaw(){
+  const v = localStorage.getItem(MEAL_KEY);
+  return v === null ? "420000" : v;   // 저장한 적이 없을 때만 테스트 금액 42만원
+}
 function getMealTotal(){
-  const v = parseInt(localStorage.getItem(MEAL_KEY) || "420000", 10);
-  return isFinite(v) ? v : 420000;
+  const v = parseInt(getMealRaw(), 10);
+  return isFinite(v) ? v : NaN;
 }
 function setMeal(v){
-  document.getElementById("meal-total").value = v;
   localStorage.setItem(MEAL_KEY, String(v));
+  document.getElementById("meal-total").value = Number(v).toLocaleString("ko-KR");
   renderSettle(); renderRank();
 }
 
 function renderRank(){
   const rows = computeStandings();
-  const settle = computeSettlement(getMealTotal());
-  const medals = ["1위","2위","3위"];
-  document.getElementById("rankbody").innerHTML = rows.map((r,i)=>{
+  const doneCount = MATCHES.filter(x=>state.matches[x.id].done).length;
+  const ganada = [...PLAYERS].sort((a,b)=>a.localeCompare(b,'ko'));  // 행은 가나다 순으로 고정
+  document.getElementById("rankbody").innerHTML = ganada.map(name=>{
+    const idx = rows.findIndex(r=>r.name===name);
+    const r = rows[idx];
     const diff = r.pf - r.pa;
-    const dueTxt = settle && !settle.error ? settle.amounts[i].toLocaleString("ko-KR") + "원" : "-";
-    return `<tr class="${i===0?'r1':''}">
-      <td><span class="rmedal">${medals[i]||(i+1)+"위"}</span></td>
-      <td class="nm">${esc(r.name)}</td><td>${r.w}</td><td>${r.l}</td>
-      <td>${r.pf}</td><td>${r.pa}</td><td>${diff>0?'+'+diff:diff}</td><td class="due">${dueTxt}</td>
+    const rankTxt = doneCount>0 ? (idx+1)+"위" : "미정";
+    return `<tr class="${doneCount>0&&idx===0?'r1':''}">
+      <td class="nm">${esc(name)}</td><td>${r.w}</td><td>${r.l}</td>
+      <td>${r.pf}</td><td>${r.pa}</td><td>${diff>0?'+'+diff:diff}</td><td><span class="rmedal">${rankTxt}</span></td>
     </tr>`;
   }).join("");
+  const stateTxt = doneCount===6 ? "최종 순위" : (doneCount>0 ? `임시 순위 (${doneCount}/6경기 확정)` : "확정된 경기가 없어 순위 미정");
+  document.getElementById("ranknote").innerHTML = "이름은 가나다 순으로 고정해요 · 완료된 경기만 집계 · 순위 기준: 승수 → 승자승 → 득실차 → 총득점<br>" + stateTxt + " · 식대는 '식대 정산' 탭에서 계산해요";
 }
 
 function renderSettle(){
@@ -563,6 +571,7 @@ function renderSettle(){
   }
   summary.textContent = sTxt;
   badge.textContent = doneCount===6 ? "최종 순위 기준" : (doneCount>0 ? `임시 (확정 ${doneCount}/6)` : "순위 미정");
+  document.getElementById("duehead").textContent = "순위별 부담금" + (doneCount===0 ? " (예시)" : "");
   if(doneCount===0){
     body.innerHTML = "";
     note.textContent = "확정된 경기가 없어 아직 이름별 배정이 없어요. 경기가 확정되면 현재 순위대로, 6경기가 모두 끝나면 최종 순위대로 자동 배정됩니다. 위 '순위별 부담금'이 순위가 정해졌을 때의 금액이에요.";
@@ -577,15 +586,16 @@ function renderSettle(){
   note.textContent = doneCount===6 ? "6경기 모두 확정된 최종 순위 기준이에요." : `아직 ${doneCount}/6경기만 확정된 임시 순위 기준이에요. 남은 경기가 끝나면 바뀔 수 있어요.`;
 }
 
-function copySettle(){
+function settleText(){
   const total = getMealTotal();
   const settle = computeSettlement(total);
-  if(!settle || settle.error) return;
+  if(!settle || settle.error) return null;
   const rows = computeStandings();
   const doneCount = MATCHES.filter(x=>state.matches[x.id].done).length;
   const lines = [];
   lines.push(`KG클럽 60대 A조 친선대회 식대 정산 (총 ${total.toLocaleString("ko-KR")}원)`);
   settle.amounts.forEach((a,i)=> lines.push(`${i+1}위: ${a.toLocaleString("ko-KR")}원`));
+  lines.push("배분 방식: 1위 1만원 고정 · 2~6위 2:3:4:5:6 비율 · 6위 최대 10만원");
   if(doneCount>0){
     lines.push("");
     const ganada = [...PLAYERS].sort((a,b)=>a.localeCompare(b,'ko'));
@@ -594,13 +604,33 @@ function copySettle(){
       if(idx>=0) lines.push(`${name} (${idx+1}위): ${settle.amounts[idx].toLocaleString("ko-KR")}원`);
     });
     lines.push(doneCount===6 ? "(최종 순위 기준)" : `(임시: ${doneCount}/6경기 확정 기준)`);
+  }else{
+    lines.push("(아직 순위 미정 — 순위가 정해지면 위 금액으로 자동 배정돼요)");
   }
   if(settle.diffWon!==0) lines.push(`* 배분 합계와 총액의 차액 ${settle.diffWon.toLocaleString("ko-KR")}원은 별도 조정`);
+  lines.push("* 입금은 각자 카카오톡으로 보내 주세요");
+  return lines.join("\n");
+}
+function copySettle(){
+  const t = settleText();
+  if(!t) return;
   const btn = document.getElementById("copy-settle");
-  const done = ()=>{ btn.textContent = "복사했어요!"; setTimeout(()=>{ btn.textContent = "결과 복사 (문자/카톡 붙여넣기용)"; }, 1500); };
+  const done = ()=>{ btn.textContent = "복사했어요!"; setTimeout(()=>{ btn.textContent = "결과 복사 (직접 붙여넣기용)"; }, 1500); };
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(lines.join("\n")).then(done).catch(()=>{ fallbackCopy(lines.join("\n")); done(); });
-  }else{ fallbackCopy(lines.join("\n")); done(); }
+    navigator.clipboard.writeText(t).then(done).catch(()=>{ fallbackCopy(t); done(); });
+  }else{ fallbackCopy(t); done(); }
+}
+async function shareSettle(){
+  const t = settleText();
+  if(!t) return;
+  const btn = document.getElementById("share-settle");
+  if(navigator.share){
+    try{ await navigator.share({title:"KG클럽 60대 A조 식대 정산", text:t}); }catch(e){}
+  }else{
+    fallbackCopy(t);
+    btn.textContent = "이 기기는 공유를 지원하지 않아 복사했어요. 카카오톡에 붙여넣으세요";
+    setTimeout(()=>{ btn.textContent = "카카오톡으로 공유 (정산 내용 보내기)"; }, 2000);
+  }
 }
 function fallbackCopy(t){
   const ta = document.createElement("textarea");
@@ -640,11 +670,18 @@ function showView(v){
 if(location.hash === "#rank") showView("r");
 if(location.hash === "#settle") showView("s");
 
-document.getElementById("meal-total").value = getMealTotal();
-document.getElementById("meal-total").addEventListener("input", e=>{
-  const v = parseInt(e.target.value, 10);
-  localStorage.setItem(MEAL_KEY, String(isFinite(v)?v:0));
+const mealInput = document.getElementById("meal-total");
+mealInput.value = getMealRaw() ? Number(getMealRaw()).toLocaleString("ko-KR") : "";
+mealInput.addEventListener("focus", ()=>{ mealInput.value = ""; });   // 칸을 누르면 비움
+mealInput.addEventListener("input", ()=>{
+  const digits = mealInput.value.replace(/[^0-9]/g, "");
+  if(mealInput.value !== digits) mealInput.value = digits;
+  localStorage.setItem(MEAL_KEY, digits);
   renderSettle(); renderRank();
+});
+mealInput.addEventListener("blur", ()=>{
+  const saved = getMealRaw();
+  mealInput.value = saved ? Number(saved).toLocaleString("ko-KR") : "";
 });
 
 renderAll();
