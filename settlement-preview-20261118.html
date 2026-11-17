@@ -130,7 +130,7 @@
 <div class="wrap">
   <header class="top">
     <h1>KG클럽 60대 A조 친선대회</h1>
-    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">친선용 1만원 차이 검토용 · 공식 앱 아님</div>
+    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">안2 친선용 검토 · 공식 앱 아님 · 공식 앱 아님</div>
     <div class="sub">2026.11.28 (토) 15:00 · 하남 덕풍배드민턴클럽</div>
     <div class="upd" id="upd">최종 업데이트: 불러오는 중…</div>
     <div class="status"><span class="dot on" id="dot"></span><span id="stxt">연결됨</span></div>
@@ -321,7 +321,7 @@ const MODES = {
   5: {slots:["A","B","C","D","E"], matches:MATCHES5, duePcts:[6,14,20,26,34],
       badge:"1인 4경기 · 총 5경기",
       note:'1인당 4경기(1경기 휴식)를 복식으로 뛰어요. <b>모든 2인 조합(10조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 \'경기 기록\' 탭의 같은 번호에 입력해요.'},
-  6: {slots:SLOTS, matches:MATCHES, dueWeights:[11,13,13,15,15,17],
+  6: {slots:SLOTS, matches:MATCHES, dueWeights:[9,11,13,15,17,19],
       badge:"1인 6경기 · 총 9경기",
       note:'1인당 6경기(3경기 휴식)씩 복식으로 뛰어요. <b>모든 2인 조합(15조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 \'경기 기록\' 탭의 같은 번호에 입력해요.'},
 };
@@ -807,23 +807,20 @@ function duePercent(i){
 }
 function duePrinciple(){
   return modeN()===6
-    ? "친선용: 1·2위, 3·4위, 5·6위 각 쌍에서 짝수 순위가 정확히 1만원 더 내요. 42만원 기준 55,000 / 65,000 / 65,000 / 75,000 / 75,000 / 85,000원에 총액 차이를 6명 균등 가감해요. 고정 비율이 아니에요."
+    ? "친선용: 쌍별 기본금액을 2만원씩 높이고 쌍 안에서는 1만원을 더해, 순위마다 1만원씩 차등해요. 42만원 기준 45,000 / 55,000 / 65,000 / 75,000 / 85,000 / 95,000원에 총액 차이를 6명 균등 가감해요. 고정 비율이 아니에요."
     : `순위별 고정 비율 ${M().duePcts.join("·")}% (1위→${modeN()}위)`;
 }
 function dueRoundingNote(){
-  if(modeN()===6) return "나머지는 5·6위 → 3·4위 순서로 각 1원씩 더해 세 쌍의 1만원 차이와 합계를 보존해요. 표의 %는 현재 총액 기준 참고 비중이에요. 6인 테스트안은 50만원 초과도 계산해요. 기존 만원 단위·50만원 상한 변경은 검토 후 확정해요.";
+  if(modeN()===6) return "원 단위 끝전은 하위 순위부터 1원씩 더하는 검토안이에요. 끝전 경계만 10,001원 차이가 되고 나머지는 1만원 차이예요. 표의 %는 현재 총액 기준 참고 비중이에요. 6인 테스트안은 50만원 초과도 계산해요. 1원 끝전·15만원 하한·기존 만원 단위·50만원 상한 변경은 검토 후 확정해요.";
   return "이론 비율로 만원 몫을 계산한 뒤 최대잔여법으로 조정해요 (잔여 동률은 하위 순위 우선). 만원 미만 끝전은 꼴찌가 부담해요. 따라서 실제 부담금은 이론 비율과 다를 수 있어요. %는 표시만 소수 둘째 자리까지 반올림하며 계산에는 정확한 비율을 써요.";
 }
 function computeSettlement(totalWon){
   if(modeN()!==6) return computeLegacySettlement(totalWon);
   if(!Number.isSafeInteger(totalWon) || totalWon<=0) return null;
-  if(totalWon<90000) return {error:"이 친선용 방식은 총액 90,000원 이상에서 계산해요. 그보다 작으면 1위 부담금이 음수가 되어 계산하지 않아요."};
-  if(totalWon%2) return {error:"1원 단위에서 세 쌍의 차이를 모두 정확히 1만원으로 유지하려면 총액이 짝수 원이어야 해요. 홀수 원 처리 방식은 아직 정하지 않았어요."};
-  const base=[0,10000,10000,20000,20000,30000];
-  const spread=totalWon-90000, each=Math.floor(spread/6), rem=spread%6;
-  const amounts=base.map(v=>v+each);
-  if(rem>=2){amounts[4]++;amounts[5]++;}
-  if(rem>=4){amounts[2]++;amounts[3]++;}
+  if(totalWon<150000) return {error:"안2 친선용 방식은 총액 150,000원 이상에서 계산해요. 그보다 작으면 1위 부담금이 음수가 되어 계산하지 않아요."};
+  const base=[0,10000,20000,30000,40000,50000];
+  const spread=totalWon-150000,each=Math.floor(spread/6),rem=spread%6;
+  const amounts=base.map((v,i)=>v+each+(i>=6-rem?1:0));
   return {amounts,overCap:false,small:false};
 }
 
@@ -938,8 +935,8 @@ function renderRank(){
 
 function renderSettleBase(){
   document.getElementById("due-principle").textContent = duePrinciple();
-  document.getElementById("rounding-top").textContent = modeN()===6 ? "30만원: 35,000 / 45,000 / 45,000 / 55,000 / 55,000 / 65,000원. 총액이 바뀌어도 각 쌍은 1만원 차이를 유지해요 (완전 동률은 기존 공동순위 균등분할 우선)." : "기존 만원 단위 조정·50만원 상한을 그대로 유지해요.";
-  document.getElementById("rounding-badge").textContent = modeN()===6 ? "친선용 · 1만원 차이" : "만원 단위";
+  document.getElementById("rounding-top").textContent = modeN()===6 ? "30만원: 25,000 / 35,000 / 45,000 / 55,000 / 65,000 / 75,000원. 1만원씩 차등하되 나눠 떨어지지 않는 1원 끝전만 하위 순위에 조정하는 안이에요. 완전 동률은 기존 공동순위 균등분할을 우선해요." : "기존 만원 단위 조정·50만원 상한을 그대로 유지해요.";
+  document.getElementById("rounding-badge").textContent = modeN()===6 ? "안2 · 순위별 차등" : "만원 단위";
   renderPayerOptions();
   renderPayments();
   const mnote = document.getElementById("meal-note");
