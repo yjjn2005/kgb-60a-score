@@ -107,6 +107,14 @@
   nav.tabs button.active{color:var(--gold);background:rgba(212,175,55,.12);}
   .view{display:none;} .view.active{display:block;}
   .rest{margin-top:10px;padding-top:10px;border-top:1px dashed #d9c99a;font-size:15px;color:#6b7a99;text-align:center;}
+  .roster-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;}
+  .roster-grid .rname{background:#fff;border:2px solid var(--navy2);border-radius:12px;padding:12px 4px;text-align:center;font-size:18px;font-weight:800;color:var(--navy2);cursor:pointer;touch-action:manipulation;font-family:inherit;}
+  .roster-grid .rname.on{background:var(--navy2);color:#fff;}
+  .roster-grid .rname.off{opacity:.45;}
+  .roster-grid .rname:disabled{cursor:default;}
+  .chip.on{background:var(--navy2);color:#fff;}
+  .chip:disabled{opacity:.45;cursor:default;}
+  @media (max-width:420px){ .roster-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
   .assign-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;}
   .assign-cell{display:flex;flex-direction:column;gap:4px;}
   .assign-cell .alabel{font-size:16px;font-weight:800;color:var(--navy2);text-align:center;}
@@ -122,7 +130,7 @@
 <div class="wrap">
   <header class="top">
     <h1>KG클럽 60대 A조 친선대회</h1>
-    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.7 · 2026-11-17</div>
+    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.8 · 2026-11-17</div>
     <div class="sub">2026.11.28 (토) 15:00 · 하남 덕풍배드민턴클럽</div>
     <div class="upd" id="upd">최종 업데이트: 불러오는 중…</div>
     <div class="status"><span class="dot on" id="dot"></span><span id="stxt">연결됨</span></div>
@@ -151,14 +159,26 @@
 
   <section id="view-b" class="view active">
     <div class="card">
-      <div class="mhead"><span class="mnum">번호 추첨 배정 (A~F)</span><span class="badge play" id="assign-state">미정</span></div>
-      <div class="ranknote" style="text-align:left;margin-top:0;">공지 대진은 기호 A~F로 돼 있어요. <b>번호 추첨 후</b> 각 기호에 선수를 배정하면 대진표·경기 기록·순위·정산에 이름이 바로 반영되고, 입력 즉시 저장되어 모든 기기에 동기화돼요.</div>
+      <div class="mhead"><span class="mnum">출전자 명단</span><span class="badge play" id="roster-count">6명</span></div>
+      <div class="ranknote" style="text-align:left;margin-top:0;">당일 출전 인원을 고르고, 명단에서 <b>출전자를 눌러 선택</b>하면 대진표·경기 기록·순위·정산이 그 인원에 맞춰 자동으로 바뀌어요. 선택 즉시 저장되어 모든 기기에 동기화돼요.</div>
+      <div style="display:flex;gap:6px;margin-top:10px;">
+        <button class="chip" id="mode-4" onclick="setMode(4)">4명</button>
+        <button class="chip" id="mode-5" onclick="setMode(5)">5명</button>
+        <button class="chip" id="mode-6" onclick="setMode(6)">6명</button>
+      </div>
+      <div class="roster-grid" id="roster-grid"></div>
+      <div class="ranknote" id="roster-note" style="text-align:left;margin-top:8px;"></div>
+      <div class="ranknote" id="roster-locknote" style="text-align:left;margin-top:8px;display:none;">확정된 경기가 있어 인원·출전자 변경이 잠겨 있어요. 이미 확정된 기록을 보호하는 장치예요.</div>
+    </div>
+    <div class="card">
+      <div class="mhead"><span class="mnum" id="assign-title">번호 추첨 배정 (A~F)</span><span class="badge play" id="assign-state">미정</span></div>
+      <div class="ranknote" id="assign-note" style="text-align:left;margin-top:0;">공지 대진은 기호 A~F로 돼 있어요. <b>번호 추첨 후</b> 각 기호에 선수를 배정하면 대진표·경기 기록·순위·정산에 이름이 바로 반영되고, 입력 즉시 저장되어 모든 기기에 동기화돼요.</div>
       <div class="assign-grid" id="assign-grid"></div>
       <div class="ranknote" id="assign-locknote" style="text-align:left;margin-top:8px;display:none;">확정된 경기가 있어 배정 변경이 잠겨 있어요. 이미 확정된 기록의 이름이 바뀌지 않도록 보호하는 장치예요.</div>
     </div>
     <div class="card">
-      <div class="mhead"><span class="mnum">대진표</span><span class="badge play">1인 6경기 · 총 9경기</span></div>
-      <div class="ranknote" style="text-align:left;margin-top:0;">1인당 6경기(3경기 휴식)씩 복식으로 뛰어요. <b>모든 2인 조합(15조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 '경기 기록' 탭의 같은 번호에 입력해요.</div>
+      <div class="mhead"><span class="mnum">대진표</span><span class="badge play" id="bracket-badge">1인 6경기 · 총 9경기</span></div>
+      <div class="ranknote" id="bracket-note" style="text-align:left;margin-top:0;">1인당 6경기(3경기 휴식)씩 복식으로 뛰어요. <b>모든 2인 조합(15조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 '경기 기록' 탭의 같은 번호에 입력해요.</div>
     </div>
     <div id="bracket"></div>
   </section>
@@ -201,7 +221,7 @@
         <tbody id="duebody"></tbody>
       </table>
       <div id="settle-summary" class="ranknote" style="text-align:left;"></div>
-      <div class="ranknote" style="text-align:left;">배분 방식: 순위별 고정 비율 2·10·15·20·23·30% (1위→6위) · 만원 단위로 맞추고 끝전(만원 미만)은 6위가 부담 · 총액 상한 50만원 (초과 시 정산 차단) · 다승→승자승→승점→다득점이 모두 같으면 공동 순위로 해당 등수 금액을 합산해 똑같이 나눠요 (만원 단위보다 우선, 1원 잔여는 가나다 순) · 경기 전 모두가 합의하는 친선 차등이에요.</div>
+      <div class="ranknote" id="due-rule-note" style="text-align:left;"></div>
     </div>
 
     <div class="card">
@@ -257,22 +277,57 @@ const OLD_MATCHES = [
   {id:"m5", a:["유재진","조성필"], b:["안재성","한승연"]},
   {id:"m6", a:["유재진","유현욱"], b:["김기환","조성필"]},
 ];
-// 금액 정산 규칙 (2026-11-17 18:51 공지 + 사용자 승인): 순위별 고정 비율 2/10/15/20/23/30%, 총액 상한 50만원, 만원 단위(끝전 6위)
-const DUE_PCTS = [2,10,15,20,23,30]; // 1위~6위 (%), 합 100
+// 4명 대진 (3경기): 모든 2인 조합(6조)이 한 번씩 파트너 · 1인 3경기(휴식 없음)
+const MATCHES4 = [
+  {id:"q1", a:["A","B"], b:["C","D"]},
+  {id:"q2", a:["A","C"], b:["B","D"]},
+  {id:"q3", a:["A","D"], b:["B","C"]},
+];
+// 5명 대진 (5경기): 모든 2인 조합(10조)이 한 번씩 파트너 · 1인 4경기(1경기 휴식) · 상대도 전원 2회씩 균등
+const MATCHES5 = [
+  {id:"p1", a:["A","B"], b:["C","D"]},
+  {id:"p2", a:["A","C"], b:["B","E"]},
+  {id:"p3", a:["A","E"], b:["B","D"]},
+  {id:"p4", a:["A","D"], b:["C","E"]},
+  {id:"p5", a:["B","C"], b:["D","E"]},
+];
+// 인원별 설정: 대진·기호·정산 비율
+// 금액 정산 규칙: 순위별 고정 비율, 총액 상한 50만원, 만원 단위(끝전 꼴찌 부담)
+// 6인 비율 2/10/15/20/23/30%는 2026-11-17 18:51 공지 적용분. 4/5인 비율은 동일한 친선 차등 구조의 권고안.
+const MODES = {
+  4: {slots:["A","B","C","D"], matches:MATCHES4, duePcts:[10,20,30,40],
+      badge:"1인 3경기 · 총 3경기",
+      note:'1인당 3경기(휴식 없음)를 복식으로 뛰어요. <b>모든 2인 조합(6조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 \'경기 기록\' 탭의 같은 번호에 입력해요.'},
+  5: {slots:["A","B","C","D","E"], matches:MATCHES5, duePcts:[6,14,20,26,34],
+      badge:"1인 4경기 · 총 5경기",
+      note:'1인당 4경기(1경기 휴식)를 복식으로 뛰어요. <b>모든 2인 조합(10조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 \'경기 기록\' 탭의 같은 번호에 입력해요.'},
+  6: {slots:SLOTS, matches:MATCHES, duePcts:[2,10,15,20,23,30],
+      badge:"1인 6경기 · 총 9경기",
+      note:'1인당 6경기(3경기 휴식)씩 복식으로 뛰어요. <b>모든 2인 조합(15조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 \'경기 기록\' 탭의 같은 번호에 입력해요.'},
+};
 const DUE_CAP_TOTAL = 500000;         // 합의 총액 상한 (원)
-const DUE_RATIO_LABELS = ["2%","10%","15%","20%","23%","30%"];
 const MEAL_KEY = "kgb60a-meal-total";
 const LS_KEY = "kgb60a-state-v3";
 const CID_KEY = "kgb60a-cid";
 let clientId = localStorage.getItem(CID_KEY);
 if(!clientId){ clientId = "c" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem(CID_KEY, clientId); }
 
-function emptyState(){
+function emptyMatchRecs(matches){
   const m = {};
-  MATCHES.forEach(x => m[x.id] = {s1:0, s2:0, done:false, updatedAt:0});
+  matches.forEach(x => m[x.id] = {s1:0, s2:0, done:false, updatedAt:0});
+  return m;
+}
+function emptyAssignRecs(slots){
   const as = {};
-  SLOTS.forEach(s => as[s] = {name:"", updatedAt:0});
-  return {app:"kgb-60a", v:3, updatedAt:0, clientId:"init", matches:m, assign:as};
+  slots.forEach(s => as[s] = {name:"", updatedAt:0});
+  return as;
+}
+function emptyState(){
+  return {app:"kgb-60a", v:4, updatedAt:0, clientId:"init",
+    mode:{n:6, updatedAt:0},
+    parts:{names:ROSTER.slice(), updatedAt:0},
+    matches:emptyMatchRecs(MATCHES), matches5:emptyMatchRecs(MATCHES5), matches4:emptyMatchRecs(MATCHES4),
+    assign:emptyAssignRecs(SLOTS), assign5:emptyAssignRecs(MODES[5].slots), assign4:emptyAssignRecs(MODES[4].slots)};
 }
 let state = emptyState();
 let dirty = false, saveTimer = null, online = true;
@@ -282,36 +337,75 @@ try{
   if(cached){ const p = JSON.parse(cached); if(p && p.matches) state = normalize(p); }
 }catch(e){}
 
+function normMatchRecs(src, matches){
+  const out = emptyMatchRecs(matches);
+  const sm = src || {};
+  matches.forEach(x=>{
+    const v = sm[x.id] || {};
+    out[x.id] = {s1:+v.s1||0, s2:+v.s2||0, done:!!v.done, updatedAt:+v.updatedAt||0};
+  });
+  return out;
+}
+function normAssignRecs(src, slots){
+  const out = emptyAssignRecs(slots);
+  const sa = src || {};
+  slots.forEach(k=>{
+    const v = sa[k] || {};
+    out[k] = {name: typeof v.name === "string" ? v.name : "", updatedAt:+v.updatedAt||0};
+  });
+  return out;
+}
 function normalize(s){
   const base = emptyState();
   if(!s || !s.matches) return base;
   base.updatedAt = s.updatedAt || 0; base.clientId = s.clientId || "";
-  MATCHES.forEach(x=>{
-    const v = s.matches[x.id] || {};
-    base.matches[x.id] = {s1:+v.s1||0, s2:+v.s2||0, done:!!v.done, updatedAt:+v.updatedAt||0};
-  });
-  const sa = s.assign || {};
-  SLOTS.forEach(k=>{
-    const v = sa[k] || {};
-    base.assign[k] = {name: typeof v.name === "string" ? v.name : "", updatedAt:+v.updatedAt||0};
-  });
+  const n = s.mode && [4,5,6].includes(+s.mode.n) ? +s.mode.n : 6;
+  base.mode = {n:n, updatedAt:+(s.mode && s.mode.updatedAt)||0};
+  const pn = s.parts && Array.isArray(s.parts.names) ? s.parts.names.filter(x=>ROSTER.includes(x)) : ROSTER.slice();
+  base.parts = {names:pn.length ? pn : ROSTER.slice(), updatedAt:+(s.parts && s.parts.updatedAt)||0};
+  base.matches = normMatchRecs(s.matches, MATCHES);
+  base.matches5 = normMatchRecs(s.matches5, MATCHES5);
+  base.matches4 = normMatchRecs(s.matches4, MATCHES4);
+  base.assign = normAssignRecs(s.assign, SLOTS);
+  base.assign5 = normAssignRecs(s.assign5, MODES[5].slots);
+  base.assign4 = normAssignRecs(s.assign4, MODES[4].slots);
   return base;
 }
 
+function mergeMatchRecs(aRecs, bRecs, matches){
+  const out = emptyMatchRecs(matches);
+  let maxU = 0;
+  matches.forEach(x=>{
+    const a = aRecs[x.id], b = bRecs[x.id];
+    out[x.id] = (b.updatedAt >= a.updatedAt) ? b : a;
+    if(out[x.id].updatedAt > maxU) maxU = out[x.id].updatedAt;
+  });
+  return {recs:out, maxU:maxU};
+}
+function mergeAssignRecs(aRecs, bRecs, slots){
+  const out = emptyAssignRecs(slots);
+  let maxU = 0;
+  slots.forEach(k=>{
+    const a = aRecs[k], b = bRecs[k];
+    out[k] = (b.updatedAt >= a.updatedAt) ? b : a;
+    if(out[k].updatedAt > maxU) maxU = out[k].updatedAt;
+  });
+  return {recs:out, maxU:maxU};
+}
 function merge(remote){
   const r = normalize(remote);
   const out = emptyState();
   let maxU = 0;
-  MATCHES.forEach(x=>{
-    const a = state.matches[x.id], b = r.matches[x.id];
-    out.matches[x.id] = (b.updatedAt >= a.updatedAt) ? b : a;
-    if(out.matches[x.id].updatedAt > maxU) maxU = out.matches[x.id].updatedAt;
-  });
-  SLOTS.forEach(k=>{
-    const a = state.assign[k], b = r.assign[k];
-    out.assign[k] = (b.updatedAt >= a.updatedAt) ? b : a;
-    if(out.assign[k].updatedAt > maxU) maxU = out.assign[k].updatedAt;
-  });
+  out.mode = (r.mode.updatedAt >= state.mode.updatedAt) ? r.mode : state.mode;
+  if(out.mode.updatedAt > maxU) maxU = out.mode.updatedAt;
+  out.parts = (r.parts.updatedAt >= state.parts.updatedAt) ? r.parts : state.parts;
+  if(out.parts.updatedAt > maxU) maxU = out.parts.updatedAt;
+  let mm = mergeMatchRecs(state.matches, r.matches, MATCHES); out.matches = mm.recs; maxU = Math.max(maxU, mm.maxU);
+  mm = mergeMatchRecs(state.matches5, r.matches5, MATCHES5); out.matches5 = mm.recs; maxU = Math.max(maxU, mm.maxU);
+  mm = mergeMatchRecs(state.matches4, r.matches4, MATCHES4); out.matches4 = mm.recs; maxU = Math.max(maxU, mm.maxU);
+  let ma = mergeAssignRecs(state.assign, r.assign, SLOTS); out.assign = ma.recs; maxU = Math.max(maxU, ma.maxU);
+  ma = mergeAssignRecs(state.assign5, r.assign5, MODES[5].slots); out.assign5 = ma.recs; maxU = Math.max(maxU, ma.maxU);
+  ma = mergeAssignRecs(state.assign4, r.assign4, MODES[4].slots); out.assign4 = ma.recs; maxU = Math.max(maxU, ma.maxU);
   out.updatedAt = Math.max(r.updatedAt, state.updatedAt, maxU);
   out.clientId = clientId;
   return out;
@@ -326,7 +420,7 @@ function fmtTime(ts){
   if(!ts) return "-";
   return new Date(ts).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:true});
 }
-const APP_BUILD_TS = new Date("2026-11-17T19:06:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
+const APP_BUILD_TS = new Date("2026-11-17T19:35:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
 function renderUpd(){
   const ts = Math.max(state.updatedAt||0, APP_BUILD_TS);
   document.getElementById("upd").textContent = "최종 업데이트: " + fmtTime(ts) +
@@ -391,8 +485,74 @@ function scheduleSave(){
   saveTimer = setTimeout(saveNow, 700);
 }
 
+// 활성 인원 모드 접근자
+function modeN(){ return (state.mode && [4,5,6].includes(+state.mode.n)) ? +state.mode.n : 6; }
+function M(){ return MODES[modeN()]; }
+function matchRecs(){ return modeN()===6 ? state.matches : (modeN()===5 ? state.matches5 : state.matches4); }
+function assignRecs(){ return modeN()===6 ? state.assign : (modeN()===5 ? state.assign5 : state.assign4); }
+function participants(){ const p = state.parts && Array.isArray(state.parts.names) ? state.parts.names : ROSTER; return p.slice(); }
+function partsValid(){ return participants().length === modeN(); }
+function anyLocked(){
+  return MATCHES.some(x=>state.matches[x.id] && state.matches[x.id].done)
+      || MATCHES5.some(x=>state.matches5[x.id] && state.matches5[x.id].done)
+      || MATCHES4.some(x=>state.matches4[x.id] && state.matches4[x.id].done);
+}
+function setMode(n){
+  if(anyLocked() || modeN()===n) return;
+  state.mode = {n:n, updatedAt:Date.now()};
+  // 인원 전환 시 출전자 수 맞추기: 많으면 앞에서부터 n명 유지
+  const p = participants();
+  if(p.length > n){ state.parts = {names:p.slice(0,n), updatedAt:Date.now()}; }
+  state.updatedAt = Date.now();
+  renderAll();
+  scheduleSave();
+}
+function togglePart(name){
+  if(anyLocked()) return;
+  const p = participants();
+  const i = p.indexOf(name);
+  if(i >= 0){ p.splice(i,1); }
+  else{
+    if(p.length >= modeN()) return;   // 인원 수를 초과해 고를 수 없음
+    p.push(name);
+    p.sort((a,b)=>ROSTER.indexOf(a)-ROSTER.indexOf(b));
+  }
+  state.parts = {names:p, updatedAt:Date.now()};
+  // 빠진 선수가 현재 모드 기호에 배정돼 있으면 해제
+  const ar = assignRecs();
+  M().slots.forEach(s=>{ if(ar[s] && ar[s].name && !p.includes(ar[s].name)) ar[s] = {name:"", updatedAt:Date.now()}; });
+  state.updatedAt = Date.now();
+  renderAll();
+  scheduleSave();
+}
+function renderRoster(){
+  const n = modeN();
+  const p = participants();
+  const locked = anyLocked();
+  [4,5,6].forEach(k=>{
+    const b = document.getElementById("mode-"+k);
+    b.classList.toggle("on", k===n);
+    b.disabled = locked;
+  });
+  document.getElementById("roster-count").textContent = n + "명";
+  document.getElementById("roster-grid").innerHTML = ROSTER.map(nm=>{
+    const on = p.includes(nm);
+    return `<button type="button" class="rname ${on?'on':'off'}" data-part="${esc(nm)}"${locked?' disabled':''} aria-pressed="${on}">${esc(nm)}</button>`;
+  }).join("");
+  const note = document.getElementById("roster-note");
+  if(partsValid()){
+    note.textContent = n < 6 ? `${n}명 대진으로 진행해요. 출전자를 바꾸려면 이름을 눌러 다시 고르세요.` : "전원 출전이에요. 인원이 줄면 위에서 인원을 고르고 출전자를 선택하세요.";
+  }else{
+    note.textContent = `출전자 ${n}명을 선택해 주세요 (현재 ${p.length}명 선택됨). ${n}명이 정해지면 대진표·기록·순위·정산이 표시돼요.`;
+  }
+  document.getElementById("roster-locknote").style.display = locked ? "" : "none";
+}
+document.addEventListener("click", e=>{
+  const el = e.target.closest("button[data-part]");
+  if(el && !el.disabled) togglePart(el.dataset.part);
+});
 function slotName(s){
-  const a = state.assign && state.assign[s];
+  const a = assignRecs() && assignRecs()[s];
   return (a && a.name) ? a.name : "";
 }
 function slotLabel(s){
@@ -400,7 +560,7 @@ function slotLabel(s){
   return n ? s + " · " + n : s;
 }
 function orderedSlots(){
-  return SLOTS.slice().sort((a,b)=>{
+  return M().slots.slice().sort((a,b)=>{
     const na = slotName(a), nb = slotName(b);
     if(na && nb) return na.localeCompare(nb,'ko');
     if(na) return -1;
@@ -410,26 +570,40 @@ function orderedSlots(){
 }
 function renderAssign(){
   const locked = assignLocked();
+  const slots = M().slots;
+  const last = slots[slots.length-1];
+  document.getElementById("assign-title").textContent = `번호 추첨 배정 (A~${last})`;
+  document.getElementById("assign-note").innerHTML = `공지 대진은 기호 A~${last}로 돼 있어요. <b>번호 추첨 후</b> 각 기호에 선수를 배정하면 대진표·경기 기록·순위·정산에 이름이 바로 반영되고, 입력 즉시 저장되어 모든 기기에 동기화돼요.`;
+  document.getElementById("bracket-badge").textContent = M().badge;
+  document.getElementById("bracket-note").innerHTML = M().note;
   const grid = document.getElementById("assign-grid");
-  grid.innerHTML = SLOTS.map(s=>{
+  if(!partsValid()){
+    grid.innerHTML = `<div class="ranknote" style="grid-column:1/-1;text-align:left;">위 '출전자 명단'에서 출전자 ${modeN()}명을 먼저 선택해 주세요.</div>`;
+    document.getElementById("assign-state").textContent = "명단 미정";
+    document.getElementById("assign-locknote").style.display = "none";
+    return;
+  }
+  grid.innerHTML = slots.map(s=>{
     const cur = slotName(s);
     const opts = ['<option value="">미정</option>']
-      .concat(ROSTER.map(n=>`<option value="${esc(n)}"${n===cur?' selected':''}>${esc(n)}</option>`)).join("");
+      .concat(participants().map(nm=>`<option value="${esc(nm)}"${nm===cur?' selected':''}>${esc(nm)}</option>`)).join("");
     return `<div class="assign-cell"><div class="alabel">${s}</div><select data-slot="${s}" aria-label="기호 ${s} 선수 배정"${locked?' disabled':''}>${opts}</select></div>`;
   }).join("");
-  const cnt = SLOTS.filter(s=>slotName(s)).length;
-  document.getElementById("assign-state").textContent = locked ? "배정 잠김" : (cnt===6 ? "배정 완료" : (cnt===0 ? "미정" : "배정 " + cnt + "/6"));
+  const cnt = slots.filter(s=>slotName(s)).length;
+  document.getElementById("assign-state").textContent = locked ? "배정 잠김" : (cnt===slots.length ? "배정 완료" : (cnt===0 ? "미정" : "배정 " + cnt + "/" + slots.length));
   document.getElementById("assign-locknote").style.display = locked ? "" : "none";
 }
 function assignLocked(){
-  return MATCHES.some(x=>{ const m = state.matches[x.id]; return m && m.done; });
+  return M().matches.some(x=>{ const m = matchRecs()[x.id]; return m && m.done; });
 }
 function setAssign(slot, name){
   if(assignLocked()) return;
+  const ar = assignRecs();
+  const slots = M().slots;
   if(name){
-    SLOTS.forEach(s=>{ if(s!==slot && slotName(s)===name) state.assign[s] = {name:"", updatedAt:Date.now()}; });
+    slots.forEach(s=>{ if(s!==slot && slotName(s)===name) ar[s] = {name:"", updatedAt:Date.now()}; });
   }
-  state.assign[slot] = {name:name, updatedAt:Date.now()};
+  ar[slot] = {name:name, updatedAt:Date.now()};
   state.updatedAt = Date.now();
   renderAll();
   scheduleSave();
@@ -440,7 +614,7 @@ document.addEventListener("change", e=>{
 });
 
 function chScore(id, team, delta){
-  const m = state.matches[id];
+  const m = matchRecs()[id];
   if(m.done) return;
   const k = team===1 ? "s1" : "s2";
   m[k] = Math.max(0, Math.min(99, (m[k]||0) + delta));
@@ -451,9 +625,9 @@ function chScore(id, team, delta){
 }
 let editingMatchId = null;
 function openScoreEditor(id){
-  const match = MATCHES.find(x=>x.id===id);
+  const match = M().matches.find(x=>x.id===id);
   if(!match) return;
-  const scores = state.matches[id];
+  const scores = matchRecs()[id];
   editingMatchId = id;
   document.getElementById("score-team-1").textContent = match.a.map(slotLabel).join(" · ");
   document.getElementById("score-team-2").textContent = match.b.map(slotLabel).join(" · ");
@@ -495,7 +669,7 @@ function applyScoreEditor(){
     one.setCustomValidity("");
     return;
   }
-  const match = state.matches[editingMatchId];
+  const match = matchRecs()[editingMatchId];
   match.s1 = s1; match.s2 = s2;
   match.updatedAt = Date.now();
   state.updatedAt = match.updatedAt;
@@ -506,7 +680,7 @@ function applyScoreEditor(){
 }
 
 function toggleDone(id){
-  const m = state.matches[id];
+  const m = matchRecs()[id];
   m.done = !m.done;
   m.updatedAt = Date.now();
   state.updatedAt = m.updatedAt;
@@ -517,8 +691,12 @@ function toggleDone(id){
 function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
 function renderMatches(){
   const el = document.getElementById("matches");
-  el.innerHTML = MATCHES.map((x,i)=>{
-    const m = state.matches[x.id];
+  if(!partsValid()){
+    el.innerHTML = `<div class="card"><div class="mhead"><span class="mnum">경기 기록</span></div><div class="ranknote" style="text-align:left;margin-top:0;">'대진표' 탭의 출전자 명단에서 출전자 ${modeN()}명을 먼저 선택해 주세요.</div></div>`;
+    return;
+  }
+  el.innerHTML = M().matches.map((x,i)=>{
+    const m = matchRecs()[x.id];
     const win1 = m.done && m.s1>m.s2, win2 = m.done && m.s2>m.s1;
     return `<div class="card ${m.done?'done':''}">
       <div class="mhead">
@@ -552,12 +730,16 @@ function renderMatches(){
 
 function restPlayers(x){
   const playing = x.a.concat(x.b);
-  return SLOTS.filter(p=>!playing.includes(p));
+  return M().slots.filter(p=>!playing.includes(p));
 }
 function renderBracket(){
   const el = document.getElementById("bracket");
-  el.innerHTML = MATCHES.map((x,i)=>{
-    const m = state.matches[x.id];
+  if(!partsValid()){
+    el.innerHTML = `<div class="card"><div class="mhead"><span class="mnum">대진표</span></div><div class="ranknote" style="text-align:left;margin-top:0;">위 출전자 명단에서 출전자 ${modeN()}명을 선택하면 대진표가 표시돼요.</div></div>`;
+    return;
+  }
+  el.innerHTML = M().matches.map((x,i)=>{
+    const m = matchRecs()[x.id];
     const status = m.done ? "완료" : ((m.s1||m.s2) ? "기록 중" : "대기");
     const scoreTxt = m.done ? (" · " + m.s1 + " : " + m.s2) : "";
     return `<div class="card ${m.done?'done':''}">
@@ -570,7 +752,7 @@ function renderBracket(){
         <div class="vs">VS</div>
         <div class="team"><div class="names">${x.b.map(s=>esc(slotLabel(s))).join("<br>")}</div></div>
       </div>
-      <div class="rest">휴식: ${restPlayers(x).map(s=>esc(slotLabel(s))).join(" · ")}</div>
+      <div class="rest">휴식: ${restPlayers(x).length ? restPlayers(x).map(s=>esc(slotLabel(s))).join(" · ") : "없음"}</div>
     </div>`;
   }).join("");
 }
@@ -607,8 +789,8 @@ async function renderArchiveSection(el, url, matches, title, note){
 // 승자승: 두 선수가 서로 다른 팀으로 맞붙은 완료 경기의 승수 비교
 function h2hDiff(p, q){
     let pw=0, qw=0;
-    MATCHES.forEach(x=>{
-      const m = state.matches[x.id];
+    M().matches.forEach(x=>{
+      const m = matchRecs()[x.id];
       if(!m.done || m.s1===m.s2) return;
       const p1=x.a.includes(p), p2=x.b.includes(p);
       const q1=x.a.includes(q), q2=x.b.includes(q);
@@ -623,9 +805,9 @@ function h2hDiff(p, q){
 // 순위 원칙 (2026-11-17 공지): ① 다승 → ② 승자승(동률 인원 간 맞대결) → ③ 승점(총득점-총실점) → ④ 다득점 → 모두 같으면 공동 순위
 function computeStandings(){
   const st = {};
-  SLOTS.forEach(p => st[p] = {slot:p, w:0, l:0, pf:0, pa:0, h2h:0});
-  MATCHES.forEach(x=>{
-    const m = state.matches[x.id];
+  M().slots.forEach(p => st[p] = {slot:p, w:0, l:0, pf:0, pa:0, h2h:0});
+  M().matches.forEach(x=>{
+    const m = matchRecs()[x.id];
     if(!m.done || m.s1===m.s2) return;
     const aWin = m.s1 > m.s2;
     x.a.forEach(p=>{ st[p].pf+=m.s1; st[p].pa+=m.s2; aWin?st[p].w++:st[p].l++; });
@@ -656,26 +838,30 @@ function computeStandings(){
   return ordered;
 }
 
-// 만원 단위 정산: 총액(원) -> [1위..6위] 부담금(원). 합계는 항상 총액과 정확히 일치.
+// 만원 단위 정산: 총액(원) -> [1위..N위] 부담금(원). 합계는 항상 총액과 정확히 일치.
 // 규칙: 순위별 고정 비율 × 총액을 만원 단위 최대잔여법(소수 잔여 큰 순, 동률이면 하위 순위 우선)으로 배분하고,
-//       만원 미만 끝전은 6위가 부담. 총액 6만원 미만이면 6명 균등 분할(끝전 6위).
+//       만원 미만 끝전은 꼴찌가 부담. 총액이 (인원×1만원) 미만이면 전원 균등 분할(끝전 꼴찌).
 function computeSettlement(totalWon){
   if(!isFinite(totalWon) || totalWon <= 0) return null;
   const overCap = totalWon > DUE_CAP_TOTAL;
-  if(totalWon < 60000){
-    const base = Math.floor(totalWon/6);
-    return { amounts: [base,base,base,base,base, totalWon - base*5], overCap, small: true };
+  const n = modeN();
+  const pcts = M().duePcts;
+  if(totalWon < n*10000){
+    const base = Math.floor(totalWon/n);
+    const amounts = new Array(n).fill(base);
+    amounts[n-1] = totalWon - base*(n-1);
+    return { amounts, overCap, small: true };
   }
   const T = Math.floor(totalWon/10000);   // 만원 단위 몫
-  const odd = totalWon - T*10000;         // 만원 미만 끝전 -> 6위
-  const raw = DUE_PCTS.map(pct => T*pct/100);
+  const odd = totalWon - T*10000;         // 만원 미만 끝전 -> 꼴찌
+  const raw = pcts.map(pct => T*pct/100);
   const floors = raw.map(v=>Math.floor(v));
   const rem = T - floors.reduce((a,b)=>a+b,0);
-  const order = [0,1,2,3,4,5].sort((a,b)=> ((raw[b]-floors[b]) - (raw[a]-floors[a])) || (b-a));
+  const order = pcts.map((_,i)=>i).sort((a,b)=> ((raw[b]-floors[b]) - (raw[a]-floors[a])) || (b-a));
   const vals = floors.slice();
   for(let k=0;k<rem;k++) vals[order[k]]++;
   const amounts = vals.map(v=>v*10000);
-  amounts[5] += odd;
+  amounts[n-1] += odd;
   return { amounts, overCap, small: false };
 }
 
@@ -725,7 +911,7 @@ function adjustedAmounts(amounts, rows){
 
 function getMealRaw(){
   const v = localStorage.getItem(MEAL_KEY);
-  return v === null ? "420000" : v;   // 저장한 적이 없을 때만 테스트 금액 42만원
+  return v === null ? String(modeN()*70000) : v;   // 저장한 적이 없을 때만 테스트 금액 (1인당 7만원 × 인원)
 }
 function getMealTotal(){
   const v = parseInt(getMealRaw(), 10);
@@ -738,8 +924,14 @@ function setMeal(v){
 }
 
 function renderRank(){
+  if(!partsValid()){
+    document.getElementById("rankbody").innerHTML = "";
+    document.getElementById("ranknote").textContent = `출전자 ${modeN()}명이 아직 정해지지 않았어요. '대진표' 탭의 출전자 명단에서 선택해 주세요.`;
+    return;
+  }
   const rows = computeStandings();
-  const doneCount = MATCHES.filter(x=>state.matches[x.id].done).length;
+  const totalGames = M().matches.length;
+  const doneCount = M().matches.filter(x=>matchRecs()[x.id].done).length;
   const rankLbl = rankLabels(rows);
   document.getElementById("rankbody").innerHTML = orderedSlots().map(slot=>{
     const idx = rows.findIndex(r=>r.slot===slot);
@@ -751,7 +943,7 @@ function renderRank(){
       <td>${r.pf}</td><td>${r.pa}</td><td>${diff>0?'+'+diff:diff}</td><td><span class="rmedal">${rankTxt}</span></td>
     </tr>`;
   }).join("");
-  const stateTxt = doneCount===9 ? "최종 순위" : (doneCount>0 ? `임시 순위 (${doneCount}/9경기 확정)` : "확정된 경기가 없어 순위 미정");
+  const stateTxt = doneCount===totalGames ? "최종 순위" : (doneCount>0 ? `임시 순위 (${doneCount}/${totalGames}경기 확정)` : "확정된 경기가 없어 순위 미정");
   document.getElementById("ranknote").innerHTML =
     "<b>순위 원칙</b>: ① 다승(승리 수) → ② 승자승(동률 인원 간 맞대결 승자) → ③ 승점(총득점−총실점) → ④ 다득점 · 모두 같으면 공동 순위 (해당 등수 부담금을 합산해 똑같이 분배)<br>" +
     "완료된 경기만 집계 · " + stateTxt + " · 금액은 '금액 정산' 탭에서 계산해요";
@@ -759,15 +951,17 @@ function renderRank(){
 
 function renderSettle(){
   const mnote = document.getElementById("meal-note");
+  const nGames = M().matches.length;
+  document.getElementById("due-rule-note").innerHTML = `배분 방식: 순위별 고정 비율 ${M().duePcts.join("·")}% (1위→${modeN()}위) · 만원 단위로 맞추고 끝전(만원 미만)은 ${modeN()}위가 부담 · 총액 상한 50만원 (초과 시 정산 차단) · 다승→승자승→승점→다득점이 모두 같으면 공동 순위로 해당 등수 금액을 합산해 똑같이 나눠요 (만원 단위보다 우선, 1원 잔여는 가나다 순) · 경기 전 모두가 합의하는 친선 차등이에요.`;
   if(localStorage.getItem(MEAL_KEY) === null){
-    mnote.textContent = "지금 보이는 420,000원은 테스트 금액이에요 (1인당 7만원 × 6명 가정). 칸을 누르면 지워지니 실제 식대를 바로 입력하세요. 입력하는 즉시 다시 계산되고, 금액은 이 기기에만 저장됩니다.";
+    mnote.textContent = `지금 보이는 ${(modeN()*70000).toLocaleString("ko-KR")}원은 테스트 금액이에요 (1인당 7만원 × ${modeN()}명 가정). 칸을 누르면 지워지니 실제 식대를 바로 입력하세요. 입력하는 즉시 다시 계산되고, 금액은 이 기기에만 저장됩니다.`;
   }else{
     mnote.textContent = "테스트 금액 42만원은 지워지고 지금 금액이 저장돼 있어요. 칸을 누르면 지워지고, 입력하는 즉시 다시 계산돼요. 금액은 이 기기에만 저장됩니다.";
   }
   const total = getMealTotal();
   const settle = computeSettlement(total);
   const rows = computeStandings();
-  const doneCount = MATCHES.filter(x=>state.matches[x.id].done).length;
+  const doneCount = M().matches.filter(x=>matchRecs()[x.id].done).length;
   const duebody = document.getElementById("duebody");
   const summary = document.getElementById("settle-summary");
   const body = document.getElementById("settlebody");
@@ -791,17 +985,17 @@ function renderSettle(){
   shareBtn.disabled = false; copyBtn.disabled = false;
   shareBtn.style.opacity = ""; copyBtn.style.opacity = "";
   duebody.innerHTML = settle.amounts.map((a,i)=>{
-    return `<tr class="${i===0?'r1':''}"><td><span class="rmedal">${i+1}위</span></td><td>${DUE_RATIO_LABELS[i]}</td><td class="due">${a.toLocaleString("ko-KR")}원</td></tr>`;
+    return `<tr class="${i===0?'r1':''}"><td><span class="rmedal">${i+1}위</span></td><td>${M().duePcts[i]}%</td><td class="due">${a.toLocaleString("ko-KR")}원</td></tr>`;
   }).join("");
   const sum = settle.amounts.reduce((a,b)=>a+b,0);
   let sTxt = `총 식대 ${total.toLocaleString("ko-KR")}원 · 배분 합계 ${sum.toLocaleString("ko-KR")}원 · 합계가 정확히 일치해요`;
-  if(settle.small) sTxt += " · 금액이 작아 6명 균등 분할했어요";
+  if(settle.small) sTxt += ` · 금액이 작아 ${modeN()}명 균등 분할했어요`;
   summary.textContent = sTxt;
-  badge.textContent = doneCount===9 ? "최종 순위 기준" : `순위 미정 (확정 ${doneCount}/9)`;
-  document.getElementById("duehead").textContent = "순위별 부담금" + (doneCount<9 ? " (예시)" : "");
-  if(doneCount<9){
+  badge.textContent = doneCount===nGames ? "최종 순위 기준" : `순위 미정 (확정 ${doneCount}/${nGames})`;
+  document.getElementById("duehead").textContent = "순위별 부담금" + (doneCount<nGames ? " (예시)" : "");
+  if(doneCount<nGames){
     body.innerHTML = "";
-    note.textContent = (doneCount===0 ? "확정된 경기가 없어 아직 이름별 배정이 없어요. " : `아직 ${doneCount}/9경기만 확정됐어요. `) + "9경기가 모두 확정되면 최종 순위로 이름별 금액이 자동 배정돼요. 위 '순위별 부담금'이 순위가 정해졌을 때의 금액이에요.";
+    note.textContent = (doneCount===0 ? "확정된 경기가 없어 아직 이름별 배정이 없어요. " : `아직 ${doneCount}/${nGames}경기만 확정됐어요. `) + `${nGames}경기가 모두 확정되면 최종 순위로 이름별 금액이 자동 배정돼요. 위 '순위별 부담금'이 순위가 정해졌을 때의 금액이에요.`;
     return;
   }
   const adj = adjustedAmounts(settle.amounts, rows);
@@ -812,7 +1006,7 @@ function renderSettle(){
     return `<tr><td class="nm">${esc(slotLabel(slot))}</td><td>${idx>=0 ? rankLbl2[idx] : "-"}</td><td class="due">${amt.toLocaleString("ko-KR")}원</td></tr>`;
   }).join("");
   const ties = tieGroupsOf(rows).filter(g=>g.length>1);
-  note.textContent = "9경기 모두 확정된 최종 순위 기준이에요." + (ties.length===0 ? "" :
+  note.textContent = `${nGames}경기 모두 확정된 최종 순위 기준이에요.` + (ties.length===0 ? "" :
     " 성적이 완전히 같은 선수(" + ties.map(g=>g.map(i2=>slotLabel(rows[i2].slot)).join("·")).join(", ") + ")는 해당 등수 금액을 합산해 똑같이 나눴어요 (만원 단위보다 우선). 나눠 떨어지지 않는 1원 잔여는 가나다 순 앞 사람부터 1원씩 더 부담해요.");
 }
 
@@ -821,12 +1015,13 @@ function settleText(){
   const settle = computeSettlement(total);
   if(!settle || settle.error || settle.overCap) return null;
   const rows = computeStandings();
-  const doneCount = MATCHES.filter(x=>state.matches[x.id].done).length;
+  const nGames = M().matches.length;
+  const doneCount = M().matches.filter(x=>matchRecs()[x.id].done).length;
   const lines = [];
   lines.push(`KG클럽 60대 A조 친선대회 금액 정산 (총 ${total.toLocaleString("ko-KR")}원)`);
   settle.amounts.forEach((a,i)=> lines.push(`${i+1}위: ${a.toLocaleString("ko-KR")}원`));
-  lines.push("배분 방식: 순위별 고정 비율 2/10/15/20/23/30% (1위→6위) · 만원 단위, 끝전은 6위 부담 · 총액 상한 50만원 · 완전 동률(다승→승자승→승점→다득점 동일)은 합산 균등 분할 (만원 단위보다 우선)");
-  if(doneCount===9){
+  lines.push(`배분 방식: 순위별 고정 비율 ${M().duePcts.join("/")}% (1위→${modeN()}위) · 만원 단위, 끝전은 ${modeN()}위 부담 · 총액 상한 50만원 · 완전 동률(다승→승자승→승점→다득점 동일)은 합산 균등 분할 (만원 단위보다 우선)`);
+  if(doneCount===nGames){
     lines.push("");
     const adj = adjustedAmounts(settle.amounts, rows);
     const rankLbl3 = rankLabels(rows);
@@ -837,7 +1032,7 @@ function settleText(){
     if(tieGroupsOf(rows).some(g=>g.length>1)) lines.push("* 성적 완전 동률은 해당 등수 금액을 합산해 똑같이 나눴어요 (만원 단위보다 우선, 1원 잔여는 가나다 순)");
     lines.push("(최종 순위 기준)");
   }else{
-    lines.push("(아직 순위 미정 — 9경기가 모두 확정되면 위 금액으로 자동 배정돼요)");
+    lines.push(`(아직 순위 미정 — ${nGames}경기가 모두 확정되면 위 금액으로 자동 배정돼요)`);
   }
   lines.push("* 입금은 각자 카카오톡으로 보내 주세요");
   return lines.join("\n");
@@ -869,7 +1064,7 @@ function fallbackCopy(t){
   try{ document.execCommand("copy"); }catch(e){}
   document.body.removeChild(ta);
 }
-function renderAll(){ renderAssign(); renderBracket(); renderMatches(); renderRank(); renderSettle(); renderUpd(); }
+function renderAll(){ renderRoster(); renderAssign(); renderBracket(); renderMatches(); renderRank(); renderSettle(); renderUpd(); }
 
 // +/− 버튼: 탭은 1점, 길게 누르면 자동 연속 입력 (점수판이 다시 그려져도 동작하도록 문서 레벨에서 처리)
 let holdT1=null, holdT2=null;
