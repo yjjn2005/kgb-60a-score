@@ -130,7 +130,7 @@
 <div class="wrap">
   <header class="top">
     <h1>KG클럽 60대 A조 친선대회</h1>
-    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.11 · 2026-11-17</div>
+    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.12 · 2026-11-18</div>
     <div class="sub">2026.11.28 (토) 15:00 · 하남 덕풍배드민턴클럽</div>
     <div class="upd" id="upd">최종 업데이트: 불러오는 중…</div>
     <div class="status"><span class="dot on" id="dot"></span><span id="stxt">연결됨</span></div>
@@ -203,10 +203,10 @@
     <div class="card" style="border:2px solid var(--gold);">
       <div class="mhead"><span class="mnum">식대 배분 원칙</span></div>
       <div id="due-principle" style="font-size:18px;line-height:1.6;color:var(--navy);font-weight:700;"></div>
-      <div style="font-size:14px;line-height:1.5;color:var(--muted);margin-top:10px;">최종 금액은 만원 단위로 조정하며, 만원 미만 끝전은 꼴찌가 부담해요. 조정 후에는 이론 비율과 차이가 날 수 있어요.</div>
+      <div style="font-size:14px;line-height:1.5;color:var(--muted);margin-top:10px;"><span id="rounding-top"></span></div>
     </div>
     <div class="card">
-      <div class="mhead"><span class="mnum">금액 정산 배분</span><span class="badge play">만원 단위</span></div>
+      <div class="mhead"><span class="mnum">금액 정산 배분</span><span class="badge play" id="rounding-badge">1원 단위</span></div>
       <label for="meal-total" style="font-size:16px;font-weight:700;color:var(--navy2);">전체 식사금액 (원)</label>
       <input id="meal-total" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
         style="width:100%;height:64px;margin-top:6px;border:3px solid var(--navy2);border-radius:14px;background:#fff;color:var(--navy);font-size:30px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;box-sizing:border-box;">
@@ -222,7 +222,7 @@
     <div class="card">
       <div class="mhead"><span class="mnum" id="duehead">순위별 부담금</span></div>
       <table class="rank">
-        <thead><tr><th>순위</th><th>이론 비율</th><th>조정 부담금</th></tr></thead>
+        <thead><tr><th>순위</th><th>참고 비중</th><th>부담금</th></tr></thead>
         <tbody id="duebody"></tbody>
       </table>
       <div id="settle-summary" class="ranknote" style="text-align:left;"></div>
@@ -236,8 +236,17 @@
         <tbody id="settlebody"></tbody>
       </table>
       <div id="settle-note" class="ranknote"></div>
-      <button class="edit-score-btn" id="share-settle" onclick="shareSettle()" style="background:var(--navy2);color:#fff;border-color:var(--navy2);">카카오톡으로 공유 (정산 내용 보내기)</button>
-      <button class="edit-score-btn" id="copy-settle" onclick="copySettle()">결과 복사 (직접 붙여넣기용)</button>
+      <div id="payer-panel" style="text-align:left;margin-top:18px;">
+<label for="payer" style="font-size:18px;font-weight:800;">먼저 결제한 사람</label>
+<select id="payer" onchange="setPayer(this.value)" style="width:100%;min-height:54px;font-size:18px;margin:8px 0;"></select>
+<div id="payment-summary" class="ranknote" style="text-align:left;"></div>
+<div id="transfer-list"></div>
+<label for="settle-message" style="display:block;font-weight:800;margin-top:16px;">카카오톡에 붙여넣을 정산 안내</label>
+<textarea id="settle-message" readonly style="width:100%;min-height:260px;font-size:16px;line-height:1.6;box-sizing:border-box;margin-top:8px;padding:12px;"></textarea>
+<div class="ranknote" style="text-align:left;">직접 발송·송금하지 않아요. 아래 버튼으로 복사해 카카오톡에 붙여넣으세요. 계좌는 넣지 않았어요.</div>
+</div>
+<button hidden class="edit-score-btn" id="share-settle" onclick="shareSettle()" style="background:var(--navy2);color:#fff;border-color:var(--navy2);">카카오톡으로 공유 (정산 내용 보내기)</button>
+      <button class="edit-score-btn" id="copy-settle" onclick="copySettle()">카톡 정산 안내 복사</button>
     </div>
   </section>
 </div>
@@ -297,8 +306,8 @@ const MATCHES5 = [
   {id:"p5", a:["B","C"], b:["D","E"]},
 ];
 // 인원별 설정: 대진·기호·정산 비율
-// 금액 정산 규칙: 순위별 고정 비율, 총액 상한 50만원, 만원 단위(끝전 꼴찌 부담)
-// 6인: 식대 50% 균등 + 50% 순위 추가(0:1:2:3:4:5). 정확한 정수 가중치 5:7:9:11:13:15 사용.
+// 4·5인: 기존 비율·50만원 상한·만원단위. 6인: 친선용 안2 별도 계산.
+// 6인: 친선용 안2. 쌍별 기본 +2만원, 쌍 내 +1만원. 원 단위 끝전은 하위 순위부터.
 const MODES = {
   4: {slots:["A","B","C","D"], matches:MATCHES4, duePcts:[10,20,30,40],
       badge:"1인 3경기 · 총 3경기",
@@ -306,11 +315,12 @@ const MODES = {
   5: {slots:["A","B","C","D","E"], matches:MATCHES5, duePcts:[6,14,20,26,34],
       badge:"1인 4경기 · 총 5경기",
       note:'1인당 4경기(1경기 휴식)를 복식으로 뛰어요. <b>모든 2인 조합(10조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 \'경기 기록\' 탭의 같은 번호에 입력해요.'},
-  6: {slots:SLOTS, matches:MATCHES, dueWeights:[5,7,9,11,13,15],
+  6: {slots:SLOTS, matches:MATCHES, dueWeights:[9,11,13,15,17,19],
       badge:"1인 6경기 · 총 9경기",
       note:'1인당 6경기(3경기 휴식)씩 복식으로 뛰어요. <b>모든 2인 조합(15조)이 한 번씩 파트너</b>가 돼요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 \'경기 기록\' 탭의 같은 번호에 입력해요.'},
 };
 const DUE_CAP_TOTAL = 500000;         // 합의 총액 상한 (원)
+const PAYER_KEY="kgb60a-payer-slot";
 const MEAL_KEY = "kgb60a-meal-total";
 const LS_KEY = "kgb60a-state-v3";
 const CID_KEY = "kgb60a-cid";
@@ -426,7 +436,7 @@ function fmtTime(ts){
   if(!ts) return "-";
   return new Date(ts).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:true});
 }
-const APP_BUILD_TS = new Date("2026-11-17T21:49:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
+const APP_BUILD_TS = new Date("2026-11-18T05:08:07+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
 function renderUpd(){
   const ts = Math.max(state.updatedAt||0, APP_BUILD_TS);
   document.getElementById("upd").textContent = "최종 업데이트: " + fmtTime(ts) +
@@ -842,42 +852,26 @@ function computeStandings(){
 //       만원 미만 끝전은 꼴찌가 부담. 총액이 (인원×1만원) 미만이면 전원 균등 분할(끝전 꼴찌).
 function dueWeights(){ return M().dueWeights || M().duePcts; }
 function duePercent(i){
-  const w = dueWeights();
-  return (w[i]*100/w.reduce((a,b)=>a+b,0)).toLocaleString("ko-KR",{maximumFractionDigits:2});
+  if(modeN()===6){const s=computeSettlement(getMealTotal());return s&&!s.error?(s.amounts[i]*100/getMealTotal()).toLocaleString("ko-KR",{maximumFractionDigits:2}):"-";}
+  const w=dueWeights();return (w[i]*100/w.reduce((a,b)=>a+b,0)).toLocaleString("ko-KR",{maximumFractionDigits:2});
 }
 function duePrinciple(){
   return modeN()===6
-    ? "식대의 50%는 6명이 균등 부담, 나머지 50%는 1위부터 0:1:2:3:4:5로 추가 부담해요. 1위도 균등 몫은 내며 순위 추가분만 0원이에요. 최종 이론 비율은 5:7:9:11:13:15 (합계 60)예요."
+    ? "친선용: 쌍별 기본금액을 2만원씩 높이고 쌍 안에서는 1만원을 더해, 순위마다 1만원씩 차등해요. 42만원 기준 45,000 / 55,000 / 65,000 / 75,000 / 85,000 / 95,000원에 총액 차이를 6명 균등 가감해요. 고정 비율이 아니에요."
     : `순위별 고정 비율 ${M().duePcts.join("·")}% (1위→${modeN()}위)`;
 }
 function dueRoundingNote(){
+  if(modeN()===6) return "원 단위 끝전은 하위 순위부터 1원씩 더해요. 끝전 경계만 10,001원 차이가 되고 나머지는 1만원 차이예요. 표의 %는 현재 총액 기준 참고 비중이에요. 6인 정산은 15만원 이상에서 계산하며 50만원을 넘어도 계산해요.";
   return "이론 비율로 만원 몫을 계산한 뒤 최대잔여법으로 조정해요 (잔여 동률은 하위 순위 우선). 만원 미만 끝전은 꼴찌가 부담해요. 따라서 실제 부담금은 이론 비율과 다를 수 있어요. %는 표시만 소수 둘째 자리까지 반올림하며 계산에는 정확한 비율을 써요.";
 }
 function computeSettlement(totalWon){
   if(modeN()!==6) return computeLegacySettlement(totalWon);
-  if(!Number.isSafeInteger(totalWon) || totalWon <= 0) return null;
-  const overCap = totalWon > DUE_CAP_TOTAL;
-  const n = modeN();
-  const weights = dueWeights();
-  if(n!==6 && totalWon < n*10000){
-    const base = Math.floor(totalWon/n);
-    const amounts = new Array(n).fill(base);
-    amounts[n-1] = totalWon - base*(n-1);
-    return { amounts, overCap, small: true };
-  }
-  const T = Math.floor(totalWon/10000);
-  const odd = totalWon % 10000;
-  const denominator = weights.reduce((a,b)=>a+b,0);
-  const numerators = weights.map(w=>T*w);
-  const floors = numerators.map(v=>Math.floor(v/denominator));
-  const rem = T - floors.reduce((a,b)=>a+b,0);
-  const order = weights.map((_,i)=>i).sort((a,b)=>
-    (numerators[b]%denominator - numerators[a]%denominator) || b-a);
-  const vals = floors.slice();
-  for(let k=0;k<rem;k++) vals[order[k]]++;
-  const amounts = vals.map(v=>v*10000);
-  amounts[n-1] += odd;
-  return { amounts, overCap, small: false };
+  if(!Number.isSafeInteger(totalWon) || totalWon<=0) return null;
+  if(totalWon<150000) return {error:"안2 친선용 방식은 총액 150,000원 이상에서 계산해요. 그보다 작으면 1위 부담금이 음수가 되어 계산하지 않아요."};
+  const base=[0,10000,20000,30000,40000,50000];
+  const spread=totalWon-150000,each=Math.floor(spread/6),rem=spread%6;
+  const amounts=base.map((v,i)=>v+each+(i>=6-rem?1:0));
+  return {amounts,overCap:false,small:false};
 }
 
 function computeLegacySettlement(totalWon){
@@ -962,6 +956,7 @@ function setMeal(v){
   renderSettle(); renderRank();
 }
 
+function renderSettle(){renderSettleBase();renderPayments();}
 function renderRank(){
   if(!partsValid()){
     document.getElementById("rankbody").innerHTML = "";
@@ -988,17 +983,19 @@ function renderRank(){
     "완료된 경기만 집계 · " + stateTxt + " · 금액은 '금액 정산' 탭에서 계산해요";
 }
 
-function renderSettle(){
-  document.getElementById("due-principle").innerHTML = modeN()===6
-    ? '<div>① 식대의 <b style="color:#7a5c00;">50%는 6명이 똑같이</b> 부담</div><div style="margin-top:8px;">② 나머지 <b style="color:#7a5c00;">50%는 순위별</b>로 추가 부담</div><div style="margin-top:4px;">1위→6위: <b>0:1:2:3:4:5</b></div><div style="margin-top:8px;font-size:16px;">1위도 균등 몫은 내고, <b>순위 추가분만 0원</b>이에요.<br>최종 이론 비율: <b>5:7:9:11:13:15</b></div>'
-    : duePrinciple();
+function renderSettleBase(){
+  document.getElementById("due-principle").textContent = duePrinciple();
+  document.getElementById("rounding-top").textContent = modeN()===6 ? "30만원: 25,000 / 35,000 / 45,000 / 55,000 / 65,000 / 75,000원. 1만원씩 차등하되 나눠 떨어지지 않는 1원 끝전만 하위 순위에 조정해요. 완전 동률은 기존 공동순위 균등분할을 우선해요." : "기존 만원 단위 조정·50만원 상한을 그대로 유지해요.";
+  document.getElementById("rounding-badge").textContent = modeN()===6 ? "안2 · 순위별 차등" : "만원 단위";
+  renderPayerOptions();
+  renderPayments();
   const mnote = document.getElementById("meal-note");
   const nGames = M().matches.length;
-  document.getElementById("due-rule-note").innerHTML = `${dueRoundingNote()}<br>총액 상한 50만원 (초과 시 정산 차단) · 다승→승자승→승점→다득점이 모두 같으면 공동 순위로 해당 등수 금액을 합산해 똑같이 나눠요 (만원 단위보다 우선, 1원 잔여는 가나다 순).`;
+  document.getElementById("due-rule-note").innerHTML = `${dueRoundingNote()}<br>${modeN()===6 ? "6인 안2 친선용" : "총액 상한 50만원 (초과 시 정산 차단)"} · 다승→승자승→승점→다득점이 모두 같으면 공동 순위로 해당 등수 금액을 합산해 똑같이 나눠요 (동률 균등 분할 우선, 1원 잔여는 가나다 순).`;
   if(localStorage.getItem(MEAL_KEY) === null){
     mnote.textContent = `지금 보이는 ${(modeN()*70000).toLocaleString("ko-KR")}원은 테스트 금액이에요 (1인당 7만원 × ${modeN()}명 가정). 칸을 누르면 지워지니 실제 식대를 바로 입력하세요. 입력하는 즉시 다시 계산되고, 금액은 이 기기에만 저장됩니다.`;
   }else{
-    mnote.textContent = "테스트 금액 42만원은 지워지고 지금 금액이 저장돼 있어요. 칸을 누르면 지워지고, 입력하는 즉시 다시 계산돼요. 금액은 이 기기에만 저장됩니다.";
+    mnote.textContent = "입력한 식대가 이 기기에 저장되어 있어요. 칸을 누르면 지워지고, 입력하는 즉시 다시 계산돼요.";
   }
   const total = getMealTotal();
   const settle = computeSettlement(total);
@@ -1049,44 +1046,49 @@ function renderSettle(){
   }).join("");
   const ties = tieGroupsOf(rows).filter(g=>g.length>1);
   note.textContent = `${nGames}경기 모두 확정된 최종 순위 기준이에요.` + (ties.length===0 ? "" :
-    " 성적이 완전히 같은 선수(" + ties.map(g=>g.map(i2=>slotLabel(rows[i2].slot)).join("·")).join(", ") + ")는 해당 등수 금액을 합산해 똑같이 나눴어요 (만원 단위보다 우선). 나눠 떨어지지 않는 1원 잔여는 가나다 순 앞 사람부터 1원씩 더 부담해요.");
+    " 성적이 완전히 같은 선수(" + ties.map(g=>g.map(i2=>slotLabel(rows[i2].slot)).join("·")).join(", ") + ")는 해당 등수 금액을 합산해 똑같이 나눴어요 (동률 균등 분할 우선). 나눠 떨어지지 않는 1원 잔여는 가나다 순 앞 사람부터 1원씩 더 부담해요.");
 }
 
+
+function renderPayerOptions(){
+  const el=document.getElementById("payer"),saved=localStorage.getItem(PAYER_KEY)||"";
+  el.innerHTML='<option value="">선결제자를 선택해 주세요</option>'+orderedSlots().map(slot=>`<option value="${slot}" ${saved===slot?'selected':''}>${esc(slotLabel(slot))}</option>`).join("");
+}
+function setPayer(slot){localStorage.setItem(PAYER_KEY,slot);renderPayments();}
+function paymentData(){
+  if(!partsValid()) return {error:"출전자를 먼저 선택해 주세요."};
+  const total=getMealTotal(),settle=computeSettlement(total);
+  if(!settle||settle.error||settle.overCap) return {error:settle&&settle.error?settle.error:"계산 가능한 총 식사금액을 입력해 주세요."};
+  const nGames=M().matches.length,done=M().matches.filter(x=>matchRecs()[x.id].done).length;
+  if(done!==nGames) return {error:`아직 ${done}/${nGames}경기만 확정됐어요. 모든 경기가 확정되면 이름별 입금액과 카톡 정산 안내를 만들어요.`};
+  const payer=localStorage.getItem(PAYER_KEY);
+  if(!orderedSlots().includes(payer)) return {error:"먼저 결제한 사람을 선택해 주세요."};
+  const rows=computeStandings(),amounts=adjustedAmounts(settle.amounts,rows),labels=rankLabels(rows);
+  const people=orderedSlots().map(slot=>{const i=rows.findIndex(r=>r.slot===slot);return {slot,name:slotLabel(slot),amount:amounts[i],rank:labels[i]};});
+  const own=people.find(p=>p.slot===payer),others=people.filter(p=>p.slot!==payer),receive=others.reduce((a,p)=>a+p.amount,0);
+  return {total,own,others,receive};
+}
 function settleText(){
-  const total = getMealTotal();
-  const settle = computeSettlement(total);
-  if(!settle || settle.error || settle.overCap) return null;
-  const rows = computeStandings();
-  const nGames = M().matches.length;
-  const doneCount = M().matches.filter(x=>matchRecs()[x.id].done).length;
-  const lines = [];
-  lines.push(`KG클럽 60대 A조 친선대회 금액 정산 (총 ${total.toLocaleString("ko-KR")}원)`);
-  settle.amounts.forEach((a,i)=> lines.push(`${i+1}위: ${a.toLocaleString("ko-KR")}원`));
-  lines.push(`배분 방식: ${duePrinciple()} ${dueRoundingNote()} 총액 상한 50만원 · 완전 동률(다승→승자승→승점→다득점 동일)은 해당 등수 금액을 합산해 균등 분할 (만원 단위보다 우선)`);
-  if(doneCount===nGames){
-    lines.push("");
-    const adj = adjustedAmounts(settle.amounts, rows);
-    const rankLbl3 = rankLabels(rows);
-    orderedSlots().forEach(slot=>{
-      const idx = rows.findIndex(r=>r.slot===slot);
-      if(idx>=0) lines.push(`${slotLabel(slot)} (${rankLbl3[idx]}): ${adj[idx].toLocaleString("ko-KR")}원`);
-    });
-    if(tieGroupsOf(rows).some(g=>g.length>1)) lines.push("* 성적 완전 동률은 해당 등수 금액을 합산해 똑같이 나눴어요 (만원 단위보다 우선, 1원 잔여는 가나다 순)");
-    lines.push("(최종 순위 기준)");
-  }else{
-    lines.push(`(아직 순위 미정 — ${nGames}경기가 모두 확정되면 위 금액으로 자동 배정돼요)`);
-  }
-  lines.push("* 입금은 각자 카카오톡으로 보내 주세요");
+  const p=paymentData();if(p.error) return null;
+  const lines=["[회식비 정산 안내]",`KG클럽 회식비 정산`, `총 회식비: ${p.total.toLocaleString("ko-KR")}원`, `선결제자: ${p.own.name}`,`본인 부담: ${p.own.amount.toLocaleString("ko-KR")}원 (본인에게 입금하지 않음)`,"",`${p.own.name}님에게 아래 금액을 보내 주세요.`];
+  p.others.forEach(x=>lines.push(`${x.name} (${x.rank}): ${x.amount.toLocaleString("ko-KR")}원`));
+  lines.push("",`입금받을 합계: ${p.receive.toLocaleString("ko-KR")}원`,`본인 부담 + 받을 금액 = ${p.total.toLocaleString("ko-KR")}원`,duePrinciple(),dueRoundingNote(),"완전 동률은 해당 등수 금액을 합산해 균등 분할 (1원 잔여 가나다순).","계좌 미기재. 카카오톡 송금 등 실제 보낼 방법은 별도로 확인해 주세요.");
   return lines.join("\n");
 }
-function copySettle(){
-  const t = settleText();
-  if(!t) return;
-  const btn = document.getElementById("copy-settle");
-  const done = ()=>{ btn.textContent = "복사했어요!"; setTimeout(()=>{ btn.textContent = "결과 복사 (직접 붙여넣기용)"; }, 1500); };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(t).then(done).catch(()=>{ fallbackCopy(t); done(); });
-  }else{ fallbackCopy(t); done(); }
+function renderPayments(){
+  const p=paymentData(),msg=document.getElementById("settle-message"),list=document.getElementById("transfer-list"),summary=document.getElementById("payment-summary"),btn=document.getElementById("copy-settle");
+  if(p.error){summary.textContent=p.error;list.innerHTML="";msg.value="";btn.disabled=true;return;}
+  summary.textContent=`${p.own.name}: 본인 부담 ${p.own.amount.toLocaleString("ko-KR")}원 제외 · 나머지 ${p.others.length}명에게 총 ${p.receive.toLocaleString("ko-KR")}원 받기`;
+  list.innerHTML=p.others.map(x=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #ddd;"><span>${esc(x.name)} → ${esc(p.own.name)}</span><b>${x.amount.toLocaleString("ko-KR")}원</b></div>`).join("");
+  msg.value=settleText();btn.disabled=false;
+}
+async function copySettle(){
+ const t=settleText();if(!t)return;
+ const btn=document.getElementById("copy-settle");let copied=false;
+ try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(t);copied=true;}}catch(e){}
+ if(!copied)copied=fallbackCopy(t);
+ btn.textContent=copied?"복사했어요. 카카오톡에 붙여넣으세요":"복사를 못 했어요. 위 문구를 길게 눌러 복사해 주세요";
+ setTimeout(()=>{btn.textContent="카톡 정산 안내 복사";},2500);
 }
 async function shareSettle(){
   const t = settleText();
@@ -1103,8 +1105,8 @@ async function shareSettle(){
 function fallbackCopy(t){
   const ta = document.createElement("textarea");
   ta.value = t; document.body.appendChild(ta); ta.select();
-  try{ document.execCommand("copy"); }catch(e){}
-  document.body.removeChild(ta);
+  let ok=false;try{ok=document.execCommand("copy");}catch(e){}
+  document.body.removeChild(ta);return ok;
 }
 function renderAll(){ syncAlphabeticalAssignments(); renderRoster(); renderAssign(); renderBracket(); renderMatches(); renderRank(); renderSettle(); renderUpd(); }
 
