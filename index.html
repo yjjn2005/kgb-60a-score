@@ -106,6 +106,7 @@
   }
   nav.tabs button.active{color:var(--gold);background:rgba(212,175,55,.12);}
   .view{display:none;} .view.active{display:block;}
+  .rest{margin-top:10px;padding-top:10px;border-top:1px dashed #d9c99a;font-size:15px;color:#6b7a99;text-align:center;}
   @media (min-width:768px){
     body{padding-bottom:24px;}
     nav.tabs{position:static;max-width:720px;margin:0 auto 18px;border-radius:14px;overflow:hidden;border:1px solid var(--gold);}
@@ -116,16 +117,17 @@
 <div class="wrap">
   <header class="top">
     <h1>KG클럽 60대 A조 친선대회</h1>
-    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">버전 1.3 · 2026-11-17</div>
+    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.4 · 2026-11-17</div>
     <div class="sub">2026.11.28 (토) 15:00 · 하남 덕풍배드민턴클럽</div>
     <div class="upd" id="upd">최종 업데이트: 불러오는 중…</div>
     <div class="status"><span class="dot on" id="dot"></span><span id="stxt">연결됨</span></div>
   </header>
 
   <nav class="tabs">
-    <button id="tab-m" class="active" onclick="showView('m')">경기 기록</button>
+    <button id="tab-b" class="active" onclick="showView('b')">대진표</button>
+    <button id="tab-m" onclick="showView('m')">경기 기록</button>
     <button id="tab-r" onclick="showView('r')">순위표</button>
-    <button id="tab-s" onclick="showView('s')">식대 정산</button>
+    <button id="tab-s" onclick="showView('s')">금액 정산</button>
   </nav>
 
   <dialog id="score-dialog" class="score-dialog" aria-labelledby="score-dialog-title">
@@ -142,9 +144,18 @@
     </div>
   </dialog>
 
-  <section id="view-m" class="view active">
+  <section id="view-b" class="view active">
+    <div class="card">
+      <div class="mhead"><span class="mnum">대진표</span><span class="badge play">1인 6경기 · 총 9경기</span></div>
+      <div class="ranknote" style="text-align:left;margin-top:0;">6명이 돌아가며 복식으로 뛰어요. <b>모든 2인 조합(15조)이 한 번씩 파트너</b>가 되고, 상대로도 전원과 2~3번씩 만나요. 1코트에서 경기 번호 순서대로 진행하고, 점수는 '경기 기록' 탭의 같은 번호에 입력해요.</div>
+    </div>
+    <div id="bracket"></div>
+  </section>
+
+  <section id="view-m" class="view">
     <div id="matches"></div>
     <p class="hint">점수를 바꾸면 자동으로 저장되고, 다른 사람 화면에도 반영됩니다.</p>
+    <div id="archive"></div>
   </section>
 
   <section id="view-r" class="view">
@@ -159,7 +170,7 @@
 
   <section id="view-s" class="view">
     <div class="card">
-      <div class="mhead"><span class="mnum">식대 정산</span><span class="badge play">만원 단위</span></div>
+      <div class="mhead"><span class="mnum">금액 정산 배분</span><span class="badge play">만원 단위</span></div>
       <label for="meal-total" style="font-size:16px;font-weight:700;color:var(--navy2);">전체 식사금액 (원)</label>
       <input id="meal-total" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
         style="width:100%;height:64px;margin-top:6px;border:3px solid var(--navy2);border-radius:14px;background:#fff;color:var(--navy);font-size:30px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;box-sizing:border-box;">
@@ -175,11 +186,11 @@
     <div class="card">
       <div class="mhead"><span class="mnum" id="duehead">순위별 부담금</span></div>
       <table class="rank">
-        <thead><tr><th>순위</th><th>부담금</th></tr></thead>
+        <thead><tr><th>순위</th><th>배분 비율</th><th>부담금</th></tr></thead>
         <tbody id="duebody"></tbody>
       </table>
       <div id="settle-summary" class="ranknote" style="text-align:left;"></div>
-      <div class="ranknote" style="text-align:left;">배분 방식: 1위 1만원 고정 · 6위 최대 10만원 · 2~6위는 2:3:4:5:6 비율 (참여와 친선 목적의 완만한 차등) · 만원 단위로 정합니다.</div>
+      <div class="ranknote" style="text-align:left;">배분 방식: 1위 1만원 고정 · 2~6위는 2:3:4:5:6 비율 · 최고 12만원 상한 (참여와 친선 목적의 완만한 차등) · 만원 단위로 정합니다.</div>
     </div>
 
     <div class="card">
@@ -196,10 +207,24 @@
 </div>
 
 <script>
-const STORE_URL = "https://textdb.dev/api/data/kgb60a-1c385cb4cb62517f0165499d48d9c2a0";
+const STORE_URL = "https://textdb.dev/api/data/kgb60a9-7ee2c59a606f513e5f9c8bb56d226660";
+const OLD_STORE_URL = "https://textdb.dev/api/data/kgb60a-1c385cb4cb62517f0165499d48d9c2a0";
 const POLL_MS = 3000;
 const PLAYERS = ["안재성","조성필","한승연","김기환","유재진","유현욱"];
+// 9경기 대진 (2026-11-17 확정): 1인 6경기 · 모든 2인 조합이 한 번씩 파트너 · 상대 전원과 2~3회 대전
 const MATCHES = [
+  {id:"g1", a:["조성필","유현욱"], b:["한승연","김기환"]},
+  {id:"g2", a:["유재진","유현욱"], b:["안재성","한승연"]},
+  {id:"g3", a:["안재성","유재진"], b:["김기환","유현욱"]},
+  {id:"g4", a:["안재성","조성필"], b:["김기환","유재진"]},
+  {id:"g5", a:["조성필","한승연"], b:["김기환","유현욱"]},
+  {id:"g6", a:["안재성","김기환"], b:["한승연","유현욱"]},
+  {id:"g7", a:["안재성","유재진"], b:["조성필","한승연"]},
+  {id:"g8", a:["안재성","유현욱"], b:["조성필","유재진"]},
+  {id:"g9", a:["조성필","김기환"], b:["한승연","유재진"]},
+];
+// 이전 6경기 방식 대진 (보관용, 점수 미이관)
+const OLD_MATCHES = [
   {id:"m1", a:["안재성","조성필"], b:["한승연","김기환"]},
   {id:"m2", a:["유재진","안재성"], b:["유현욱","김기환"]},
   {id:"m3", a:["유재진","한승연"], b:["유현욱","조성필"]},
@@ -207,12 +232,13 @@ const MATCHES = [
   {id:"m5", a:["유재진","조성필"], b:["안재성","한승연"]},
   {id:"m6", a:["유재진","유현욱"], b:["김기환","조성필"]},
 ];
-// 식대 정산 규칙 (2026-11-17 사용자 지시): 1위 1만원 고정, 6위 최대 10만원, 2~6위 비율 2:3:4:5:6, 만원 단위
+// 금액 정산 규칙 (2026-11-17 사용자 지시): 1위 1만원 고정, 최고 약 12만원 상한, 2~6위 비율 2:3:4:5:6, 만원 단위
 const DUE_WEIGHTS = [2,3,4,5,6]; // 2위~6위
 const DUE_FIRST = 1;  // 1위 고정 (만원)
-const DUE_CAP = 10;   // 6위 상한 (만원)
+const DUE_CAP = 12;   // 상한 (만원)
+const DUE_RATIO_LABELS = ["1만원 고정","2","3","4","5","6 · 상한 12만원"];
 const MEAL_KEY = "kgb60a-meal-total";
-const LS_KEY = "kgb60a-state";
+const LS_KEY = "kgb60a-state-v2";
 const CID_KEY = "kgb60a-cid";
 let clientId = localStorage.getItem(CID_KEY);
 if(!clientId){ clientId = "c" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem(CID_KEY, clientId); }
@@ -220,7 +246,7 @@ if(!clientId){ clientId = "c" + Math.random().toString(36).slice(2) + Date.now()
 function emptyState(){
   const m = {};
   MATCHES.forEach(x => m[x.id] = {s1:0, s2:0, done:false, updatedAt:0});
-  return {app:"kgb-60a", updatedAt:0, clientId:"init", matches:m};
+  return {app:"kgb-60a", v:2, updatedAt:0, clientId:"init", matches:m};
 }
 let state = emptyState();
 let dirty = false, saveTimer = null, online = true;
@@ -272,7 +298,9 @@ function renderUpd(){
 async function fetchRemote(){
   const res = await fetch(STORE_URL + "?t=" + Date.now(), {cache:"no-store"});
   if(!res.ok) throw new Error("read " + res.status);
-  return await res.json();
+  const txt = await res.text();
+  if(!txt || !txt.trim()) return {updatedAt:0};
+  return JSON.parse(txt);
 }
 async function pushRemote(s){
   const res = await fetch(STORE_URL, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(s)});
@@ -436,6 +464,53 @@ function renderMatches(){
   }).join("");
 }
 
+function restPlayers(x){
+  const playing = x.a.concat(x.b);
+  return PLAYERS.filter(p=>!playing.includes(p));
+}
+function renderBracket(){
+  const el = document.getElementById("bracket");
+  el.innerHTML = MATCHES.map((x,i)=>{
+    const m = state.matches[x.id];
+    const status = m.done ? "완료" : ((m.s1||m.s2) ? "기록 중" : "대기");
+    const scoreTxt = m.done ? (" · " + m.s1 + " : " + m.s2) : "";
+    return `<div class="card ${m.done?'done':''}">
+      <div class="mhead">
+        <span class="mnum">제 ${i+1} 경기</span>
+        <span class="badge ${m.done?'fin':'play'}">${status}${scoreTxt}</span>
+      </div>
+      <div class="teams">
+        <div class="team"><div class="names">${x.a.map(esc).join("<br>")}</div></div>
+        <div class="vs">VS</div>
+        <div class="team"><div class="names">${x.b.map(esc).join("<br>")}</div></div>
+      </div>
+      <div class="rest">휴식: ${restPlayers(x).map(esc).join(" · ")}</div>
+    </div>`;
+  }).join("");
+}
+async function renderArchive(){
+  const el = document.getElementById("archive");
+  try{
+    const res = await fetch(OLD_STORE_URL + "?t=" + Date.now(), {cache:"no-store"});
+    if(!res.ok) return;
+    const txt = await res.text();
+    if(!txt.trim()) return;
+    const old = JSON.parse(txt);
+    if(!old || !old.matches) return;
+    const anyScore = OLD_MATCHES.some(x=>{ const m = old.matches[x.id]; return m && (m.done || m.s1 || m.s2); });
+    if(!anyScore) return;
+    const rows = OLD_MATCHES.map((x,i)=>{
+      const m = old.matches[x.id] || {s1:0,s2:0,done:false};
+      return `<tr><td style="font-size:15px;">${i+1}</td><td style="font-size:15px;line-height:1.4;">${x.a.map(esc).join("·")}<br>vs ${x.b.map(esc).join("·")}</td><td style="font-size:15px;">${m.s1} : ${m.s2}</td><td style="font-size:15px;">${m.done?'완료':'미확정'}</td></tr>`;
+    }).join("");
+    el.innerHTML = `<div class="card">
+      <div class="mhead"><span class="mnum" style="font-size:16px;">이전 대진 기록 (6경기 방식)</span><span class="badge play">보관용</span></div>
+      <div class="ranknote" style="text-align:left;margin-top:0;">9경기 새 대진표로 바뀌기 전, 이전 6경기 방식에 입력돼 있던 기록이에요. 새 대진의 점수·순위·정산에는 합산되지 않아요.</div>
+      <table class="rank" style="margin-top:8px;"><thead><tr><th>#</th><th>대진</th><th>점수</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  }catch(e){}
+}
+
 function computeStandings(){
   const st = {};
   PLAYERS.forEach(p => st[p] = {name:p, w:0, l:0, pf:0, pa:0});
@@ -540,8 +615,8 @@ function renderRank(){
       <td>${r.pf}</td><td>${r.pa}</td><td>${diff>0?'+'+diff:diff}</td><td><span class="rmedal">${rankTxt}</span></td>
     </tr>`;
   }).join("");
-  const stateTxt = doneCount===6 ? "최종 순위" : (doneCount>0 ? `임시 순위 (${doneCount}/6경기 확정)` : "확정된 경기가 없어 순위 미정");
-  document.getElementById("ranknote").innerHTML = "이름은 가나다 순으로 고정해요 · 완료된 경기만 집계 · 순위 기준: 승수 → 승자승 → 득실차 → 총득점<br>" + stateTxt + " · 식대는 '식대 정산' 탭에서 계산해요";
+  const stateTxt = doneCount===9 ? "최종 순위" : (doneCount>0 ? `임시 순위 (${doneCount}/9경기 확정)` : "확정된 경기가 없어 순위 미정");
+  document.getElementById("ranknote").innerHTML = "이름은 가나다 순으로 고정해요 · 완료된 경기만 집계 · 순위 기준: 승수 → 승자승 → 득실차 → 총득점<br>" + stateTxt + " · 금액은 '금액 정산' 탭에서 계산해요";
 }
 
 function renderSettle(){
@@ -563,7 +638,7 @@ function renderSettle(){
   if(!settle){ duebody.innerHTML = ""; summary.textContent = ""; body.innerHTML = ""; note.textContent = "총 식사금액을 입력해 주세요."; badge.textContent = "-"; return; }
   if(settle.error){ duebody.innerHTML = ""; summary.textContent = settle.error; body.innerHTML = ""; note.textContent = ""; badge.textContent = "-"; return; }
   duebody.innerHTML = settle.amounts.map((a,i)=>{
-    return `<tr class="${i===0?'r1':''}"><td><span class="rmedal">${i+1}위</span></td><td class="due">${a.toLocaleString("ko-KR")}원</td></tr>`;
+    return `<tr class="${i===0?'r1':''}"><td><span class="rmedal">${i+1}위</span></td><td>${DUE_RATIO_LABELS[i]}</td><td class="due">${a.toLocaleString("ko-KR")}원</td></tr>`;
   }).join("");
   const sum = settle.amounts.reduce((a,b)=>a+b,0);
   let sTxt = `총 식대 ${total.toLocaleString("ko-KR")}원 · 배분 합계 ${sum.toLocaleString("ko-KR")}원`;
@@ -573,14 +648,14 @@ function renderSettle(){
     sTxt += " · 합계가 정확히 일치해요";
   }
   if(settle.leftoverWon > 0){
-    sTxt += ` · 6위 상한(10만원) 때문에 배분하지 못한 ${settle.leftoverWon.toLocaleString("ko-KR")}원이 있어요. 총액이 크면 상한 조정이 필요합니다`;
+    sTxt += ` · 상한(12만원) 때문에 배분하지 못한 ${settle.leftoverWon.toLocaleString("ko-KR")}원이 있어요. 총액이 크면 상한 조정이 필요합니다`;
   }
   summary.textContent = sTxt;
-  badge.textContent = doneCount===6 ? "최종 순위 기준" : `순위 미정 (확정 ${doneCount}/6)`;
-  document.getElementById("duehead").textContent = "순위별 부담금" + (doneCount<6 ? " (예시)" : "");
-  if(doneCount<6){
+  badge.textContent = doneCount===9 ? "최종 순위 기준" : `순위 미정 (확정 ${doneCount}/9)`;
+  document.getElementById("duehead").textContent = "순위별 부담금" + (doneCount<9 ? " (예시)" : "");
+  if(doneCount<9){
     body.innerHTML = "";
-    note.textContent = (doneCount===0 ? "확정된 경기가 없어 아직 이름별 배정이 없어요. " : `아직 ${doneCount}/6경기만 확정됐어요. `) + "6경기가 모두 확정되면 최종 순위로 이름별 금액이 자동 배정돼요. 위 '순위별 부담금'이 순위가 정해졌을 때의 금액이에요.";
+    note.textContent = (doneCount===0 ? "확정된 경기가 없어 아직 이름별 배정이 없어요. " : `아직 ${doneCount}/9경기만 확정됐어요. `) + "9경기가 모두 확정되면 최종 순위로 이름별 금액이 자동 배정돼요. 위 '순위별 부담금'이 순위가 정해졌을 때의 금액이에요.";
     return;
   }
   const ganada = [...PLAYERS].sort((a,b)=>a.localeCompare(b,'ko'));
@@ -589,7 +664,7 @@ function renderSettle(){
     const amt = idx>=0 ? settle.amounts[idx] : 0;
     return `<tr><td class="nm">${esc(name)}</td><td>${idx>=0 ? (idx+1)+"위" : "-"}</td><td class="due">${amt.toLocaleString("ko-KR")}원</td></tr>`;
   }).join("");
-  note.textContent = doneCount===6 ? "6경기 모두 확정된 최종 순위 기준이에요." : `아직 ${doneCount}/6경기만 확정된 임시 순위 기준이에요. 남은 경기가 끝나면 바뀔 수 있어요.`;
+  note.textContent = "9경기 모두 확정된 최종 순위 기준이에요.";
 }
 
 function settleText(){
@@ -599,10 +674,10 @@ function settleText(){
   const rows = computeStandings();
   const doneCount = MATCHES.filter(x=>state.matches[x.id].done).length;
   const lines = [];
-  lines.push(`KG클럽 60대 A조 친선대회 식대 정산 (총 ${total.toLocaleString("ko-KR")}원)`);
+  lines.push(`KG클럽 60대 A조 친선대회 금액 정산 (총 ${total.toLocaleString("ko-KR")}원)`);
   settle.amounts.forEach((a,i)=> lines.push(`${i+1}위: ${a.toLocaleString("ko-KR")}원`));
-  lines.push("배분 방식: 1위 1만원 고정 · 2~6위 2:3:4:5:6 비율 · 6위 최대 10만원");
-  if(doneCount===6){
+  lines.push("배분 방식: 1위 1만원 고정 · 2~6위 2:3:4:5:6 비율 · 최고 12만원 상한");
+  if(doneCount===9){
     lines.push("");
     const ganada = [...PLAYERS].sort((a,b)=>a.localeCompare(b,'ko'));
     ganada.forEach(name=>{
@@ -611,7 +686,7 @@ function settleText(){
     });
     lines.push("(최종 순위 기준)");
   }else{
-    lines.push("(아직 순위 미정 — 6경기가 모두 확정되면 위 금액으로 자동 배정돼요)");
+    lines.push("(아직 순위 미정 — 9경기가 모두 확정되면 위 금액으로 자동 배정돼요)");
   }
   if(settle.diffWon!==0) lines.push(`* 배분 합계와 총액의 차액 ${settle.diffWon.toLocaleString("ko-KR")}원은 별도 조정`);
   lines.push("* 입금은 각자 카카오톡으로 보내 주세요");
@@ -644,7 +719,7 @@ function fallbackCopy(t){
   try{ document.execCommand("copy"); }catch(e){}
   document.body.removeChild(ta);
 }
-function renderAll(){ renderMatches(); renderRank(); renderSettle(); renderUpd(); }
+function renderAll(){ renderBracket(); renderMatches(); renderRank(); renderSettle(); renderUpd(); }
 
 // +/− 버튼: 탭은 1점, 길게 누르면 자동 연속 입력 (점수판이 다시 그려져도 동작하도록 문서 레벨에서 처리)
 let holdT1=null, holdT2=null;
@@ -664,15 +739,20 @@ window.addEventListener("blur", stopHold);
 document.addEventListener("contextmenu", e=>{ if(e.target.closest(".sbtn")) e.preventDefault(); });
 
 function showView(v){
+  document.getElementById("view-b").classList.toggle("active", v==="b");
   document.getElementById("view-m").classList.toggle("active", v==="m");
   document.getElementById("view-r").classList.toggle("active", v==="r");
   document.getElementById("view-s").classList.toggle("active", v==="s");
+  document.getElementById("tab-b").classList.toggle("active", v==="b");
   document.getElementById("tab-m").classList.toggle("active", v==="m");
   document.getElementById("tab-r").classList.toggle("active", v==="r");
   document.getElementById("tab-s").classList.toggle("active", v==="s");
+  if(v==="b") renderBracket();
   if(v==="r") renderRank();
   if(v==="s") renderSettle();
 }
+if(location.hash === "#bracket") showView("b");
+if(location.hash === "#games") showView("m");
 if(location.hash === "#rank") showView("r");
 if(location.hash === "#settle") showView("s");
 
@@ -691,6 +771,7 @@ mealInput.addEventListener("blur", ()=>{
 });
 
 renderAll();
+renderArchive();
 poll();
 setInterval(poll, POLL_MS);
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) poll(); });
