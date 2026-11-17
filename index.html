@@ -289,7 +289,7 @@ function fmtTime(ts){
   if(!ts) return "-";
   return new Date(ts).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:true});
 }
-const APP_BUILD_TS = new Date("2026-11-17T18:50:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
+const APP_BUILD_TS = new Date("2026-11-17T18:44:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
 function renderUpd(){
   const ts = Math.max(state.updatedAt||0, APP_BUILD_TS);
   document.getElementById("upd").textContent = "최종 업데이트: " + fmtTime(ts) +
