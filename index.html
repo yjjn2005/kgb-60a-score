@@ -117,7 +117,7 @@
 <div class="wrap">
   <header class="top">
     <h1>KG클럽 60대 A조 친선대회</h1>
-    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.4 · 2026-11-17</div>
+    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.5 · 2026-11-17</div>
     <div class="sub">2026.11.28 (토) 15:00 · 하남 덕풍배드민턴클럽</div>
     <div class="upd" id="upd">최종 업데이트: 불러오는 중…</div>
     <div class="status"><span class="dot on" id="dot"></span><span id="stxt">연결됨</span></div>
@@ -190,7 +190,7 @@
         <tbody id="duebody"></tbody>
       </table>
       <div id="settle-summary" class="ranknote" style="text-align:left;"></div>
-      <div class="ranknote" style="text-align:left;">배분 방식: 1위 1만원 고정 · 2~6위는 2:3:4:5:6 비율 · 최고 12만원 상한 (참여와 친선 목적의 완만한 차등) · 만원 단위로 정합니다.</div>
+      <div class="ranknote" style="text-align:left;">배분 방식: 순위별 고정 비율 10·12·14·18·22·24% (1위→6위) · 만원 단위로 맞추고 끝전(만원 미만)은 6위가 부담 · 총액 상한 50만원 (초과 시 정산 차단) · 경기 전 모두가 합의하는 친선 차등이에요.</div>
     </div>
 
     <div class="card">
@@ -232,11 +232,10 @@ const OLD_MATCHES = [
   {id:"m5", a:["유재진","조성필"], b:["안재성","한승연"]},
   {id:"m6", a:["유재진","유현욱"], b:["김기환","조성필"]},
 ];
-// 금액 정산 규칙 (2026-11-17 사용자 지시): 1위 1만원 고정, 최고 약 12만원 상한, 2~6위 비율 2:3:4:5:6, 만원 단위
-const DUE_WEIGHTS = [2,3,4,5,6]; // 2위~6위
-const DUE_FIRST = 1;  // 1위 고정 (만원)
-const DUE_CAP = 12;   // 상한 (만원)
-const DUE_RATIO_LABELS = ["1만원 고정","2","3","4","5","6 · 상한 12만원"];
+// 금액 정산 규칙 (2026-11-17 사용자 지시): 순위별 고정 비율 10/12/14/18/22/24%, 총액 상한 50만원, 만원 단위(끝전 6위)
+const DUE_PCTS = [10,12,14,18,22,24]; // 1위~6위 (%), 합 100
+const DUE_CAP_TOTAL = 500000;         // 합의 총액 상한 (원)
+const DUE_RATIO_LABELS = ["10%","12%","14%","18%","22%","24%"];
 const MEAL_KEY = "kgb60a-meal-total";
 const LS_KEY = "kgb60a-state-v2";
 const CID_KEY = "kgb60a-cid";
@@ -555,36 +554,27 @@ function computeStandings(){
   return rows;
 }
 
-// 만원 단위 정산: 총액(원) -> [1위..6위] 부담금(원)과 표시용 정보
+// 만원 단위 정산: 총액(원) -> [1위..6위] 부담금(원). 합계는 항상 총액과 정확히 일치.
+// 규칙: 순위별 고정 비율 × 총액을 만원 단위 최대잔여법(소수 잔여 큰 순, 동률이면 하위 순위 우선)으로 배분하고,
+//       만원 미만 끝전은 6위가 부담. 총액 6만원 미만이면 6명 균등 분할(끝전 6위).
 function computeSettlement(totalWon){
   if(!isFinite(totalWon) || totalWon <= 0) return null;
-  const M = Math.round(totalWon/10000);
-  if(M < 6) return {error:"총액이 너무 적어 만원 단위 배분이 어려워요."};
-  const amounts = new Array(6).fill(0);
-  amounts[0] = DUE_FIRST;
-  let R = M - DUE_FIRST;
-  const capped = new Set();
-  while(true){
-    const act = [1,2,3,4,5].filter(i=>!capped.has(i));
-    if(act.length===0) break;
-    const wsum = act.reduce((s,i)=>s+DUE_WEIGHTS[i-1],0);
-    const raw = act.map(i=> R*DUE_WEIGHTS[i-1]/wsum);
-    const floors = raw.map(v=>Math.floor(v));
-    let rem = R - floors.reduce((a,b)=>a+b,0);
-    const order = act.map((_,k)=>k).sort((a,b)=> ((raw[b]-floors[b]) - (raw[a]-floors[a])) || (DUE_WEIGHTS[act[b]-1]-DUE_WEIGHTS[act[a]-1]));
-    const vals = {};
-    act.forEach((i,k)=> vals[i]=floors[k]);
-    for(let k=0;k<rem;k++) vals[act[order[k]]]++;
-    let any=false;
-    act.forEach(i=>{ if(vals[i] > DUE_CAP){ capped.add(i); amounts[i]=DUE_CAP; R -= DUE_CAP; any=true; } });
-    if(!any){ act.forEach(i=> amounts[i]=vals[i]); R = 0; break; }
+  const overCap = totalWon > DUE_CAP_TOTAL;
+  if(totalWon < 60000){
+    const base = Math.floor(totalWon/6);
+    return { amounts: [base,base,base,base,base, totalWon - base*5], overCap, small: true };
   }
-  const totalMan = amounts.reduce((a,b)=>a+b,0);
-  return {
-    amounts: amounts.map(v=>v*10000),
-    leftoverWon: R*10000,                 // 6위 상한 때문에 배분하지 못한 금액
-    diffWon: totalWon - totalMan*10000,   // 실제 총액과 배분 합계의 차이 (만원 미만 절사 포함)
-  };
+  const T = Math.floor(totalWon/10000);   // 만원 단위 몫
+  const odd = totalWon - T*10000;         // 만원 미만 끝전 -> 6위
+  const raw = DUE_PCTS.map(pct => T*pct/100);
+  const floors = raw.map(v=>Math.floor(v));
+  const rem = T - floors.reduce((a,b)=>a+b,0);
+  const order = [0,1,2,3,4,5].sort((a,b)=> ((raw[b]-floors[b]) - (raw[a]-floors[a])) || (b-a));
+  const vals = floors.slice();
+  for(let k=0;k<rem;k++) vals[order[k]]++;
+  const amounts = vals.map(v=>v*10000);
+  amounts[5] += odd;
+  return { amounts, overCap, small: false };
 }
 
 function getMealRaw(){
@@ -641,16 +631,22 @@ function renderSettle(){
     return `<tr class="${i===0?'r1':''}"><td><span class="rmedal">${i+1}위</span></td><td>${DUE_RATIO_LABELS[i]}</td><td class="due">${a.toLocaleString("ko-KR")}원</td></tr>`;
   }).join("");
   const sum = settle.amounts.reduce((a,b)=>a+b,0);
-  let sTxt = `총 식대 ${total.toLocaleString("ko-KR")}원 · 배분 합계 ${sum.toLocaleString("ko-KR")}원`;
-  if(settle.diffWon !== 0){
-    sTxt += ` · 차액 ${settle.diffWon.toLocaleString("ko-KR")}원 (만원 단위로 맞추면서 생긴 차이로, 누구에게도 배정하지 않았어요. 현장에서 별도로 조정해 주세요)`;
-  } else {
-    sTxt += " · 합계가 정확히 일치해요";
-  }
-  if(settle.leftoverWon > 0){
-    sTxt += ` · 상한(12만원) 때문에 배분하지 못한 ${settle.leftoverWon.toLocaleString("ko-KR")}원이 있어요. 총액이 크면 상한 조정이 필요합니다`;
-  }
+  let sTxt = `총 식대 ${total.toLocaleString("ko-KR")}원 · 배분 합계 ${sum.toLocaleString("ko-KR")}원 · 합계가 정확히 일치해요`;
+  if(settle.small) sTxt += " · 금액이 작아 6명 균등 분할했어요";
   summary.textContent = sTxt;
+  const shareBtn = document.getElementById("share-settle");
+  const copyBtn = document.getElementById("copy-settle");
+  if(settle.overCap){
+    sTxt = "";
+    mnote.textContent = "총액이 합의 상한 50만원을 넘었어요. 초과분은 참가자 합의가 따로 필요하니, 50만원 이하로 나눠 입력하거나 모임에서 다시 합의해 주세요. 상한 초과 중에는 정산 공유·복사가 차단돼요.";
+    mnote.style.color = "#b00020";
+    shareBtn.disabled = true; copyBtn.disabled = true;
+    shareBtn.style.opacity = ".45"; copyBtn.style.opacity = ".45";
+  }else{
+    mnote.style.color = "";
+    shareBtn.disabled = false; copyBtn.disabled = false;
+    shareBtn.style.opacity = ""; copyBtn.style.opacity = "";
+  }
   badge.textContent = doneCount===9 ? "최종 순위 기준" : `순위 미정 (확정 ${doneCount}/9)`;
   document.getElementById("duehead").textContent = "순위별 부담금" + (doneCount<9 ? " (예시)" : "");
   if(doneCount<9){
@@ -670,13 +666,13 @@ function renderSettle(){
 function settleText(){
   const total = getMealTotal();
   const settle = computeSettlement(total);
-  if(!settle || settle.error) return null;
+  if(!settle || settle.error || settle.overCap) return null;
   const rows = computeStandings();
   const doneCount = MATCHES.filter(x=>state.matches[x.id].done).length;
   const lines = [];
   lines.push(`KG클럽 60대 A조 친선대회 금액 정산 (총 ${total.toLocaleString("ko-KR")}원)`);
   settle.amounts.forEach((a,i)=> lines.push(`${i+1}위: ${a.toLocaleString("ko-KR")}원`));
-  lines.push("배분 방식: 1위 1만원 고정 · 2~6위 2:3:4:5:6 비율 · 최고 12만원 상한");
+  lines.push("배분 방식: 순위별 고정 비율 10/12/14/18/22/24% (1위→6위) · 만원 단위, 끝전은 6위 부담 · 총액 상한 50만원");
   if(doneCount===9){
     lines.push("");
     const ganada = [...PLAYERS].sort((a,b)=>a.localeCompare(b,'ko'));
@@ -688,7 +684,6 @@ function settleText(){
   }else{
     lines.push("(아직 순위 미정 — 9경기가 모두 확정되면 위 금액으로 자동 배정돼요)");
   }
-  if(settle.diffWon!==0) lines.push(`* 배분 합계와 총액의 차액 ${settle.diffWon.toLocaleString("ko-KR")}원은 별도 조정`);
   lines.push("* 입금은 각자 카카오톡으로 보내 주세요");
   return lines.join("\n");
 }
