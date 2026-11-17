@@ -83,6 +83,106 @@
   .dialog-actions button{flex:1;min-height:58px;border:0;border-radius:14px;font-size:19px;font-weight:800;cursor:pointer;touch-action:manipulation;}
   .dialog-actions .cancel{background:#fff;color:var(--navy2);border:2px solid var(--navy2);}
   .dialog-actions .save{background:var(--navy2);color:#fff;}
+  .chip{flex:1;padding:12px 0;border:2px solid var(--navy2);border-radius:12px;background:#fff;color:var(--navy2);font-size:17px;font-weight:800;cursor:pointer;touch-action:manipulation;}
+  .chip:active{background:#e9eefb;}
+  .hint{text-align:center;color:#9fb0d0;font-size:13px;margin:6px 0 0;}
+  table.rank{width:100%;border-collapse:collapse;font-size:17px;}
+  table.rank th{background:var(--navy2);color:#fff;padding:10px 4px;font-size:15px;}
+  table.rank td{padding:12px 4px;text-align:center;border-bottom:1px solid #e2d7ba;font-variant-numeric:tabular-nums;}
+  table.rank tr:first-child td{border-top:none;}
+  table.rank .nm{font-weight:700;font-size:18px;}
+  table.rank .due{font-weight:700;color:#7a5c00;}
+  table.rank tr.r1 td{background:#fff6d8;font-weight:800;}
+  .rmedal{display:inline-block;min-width:26px;}
+  .ranknote{font-size:13px;color:#8a805f;margin-top:10px;text-align:center;}
+  nav.tabs{
+    position:fixed;left:0;right:0;bottom:0;display:flex;
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>KG클럽 60대 A조 친선대회 - 점수기록</title>
+<style>
+  :root{
+    --navy:#0e1f3d; --navy2:#16294d; --gold:#d4af37; --gold2:#b8962e;
+    --cream:#faf3e0; --cream2:#f3ead2; --ink:#1c2a45; --muted:#6b7a99;
+    --red:#c0392b; --green:#1e8e5a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%, #1b3159 0%, var(--navy) 55%, #0a1830 100%);
+    color:var(--cream); min-height:100vh; touch-action:manipulation;
+    padding-bottom:110px; word-break:keep-all;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:16px 10px 24px;}
+  header.top{
+    text-align:center; padding:18px 10px 14px; border-bottom:2px solid var(--gold);
+    margin-bottom:16px;
+  }
+  header.top h1{
+    margin:0 0 6px; font-size:26px; letter-spacing:-0.5px; color:var(--gold);
+    font-weight:800;
+  }
+  header.top .sub{font-size:16px; color:var(--cream); opacity:.92;}
+  header.top .upd{font-size:13px; color:#9fb0d0; margin-top:8px;}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:13px;margin-top:6px;color:#9fb0d0;}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .dot.on{background:#3ddc84;} .dot.off{background:#e74c3c;} .dot.save{background:var(--gold);}
+  .card{
+    background:var(--cream); color:var(--ink); border-radius:16px;
+    padding:16px 12px; margin-bottom:16px;
+    box-shadow:0 4px 14px rgba(0,0,0,.35); border:1px solid #e6d9b8;
+  }
+  .card.done{background:var(--cream2); border:1.5px solid var(--gold);}
+  .mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .mnum{font-size:18px;font-weight:800;color:var(--navy2);}
+  .badge{font-size:14px;font-weight:700;padding:4px 12px;border-radius:999px;}
+  .badge.play{background:#e9eefb;color:var(--navy2);}
+  .badge.fin{background:var(--gold);color:#3a2f05;}
+  .teams{display:flex;align-items:stretch;gap:4px;}
+  .team{flex:1;min-width:0;text-align:center;}
+  .team .names{font-size:18px;font-weight:700;min-height:52px;display:flex;flex-direction:column;justify-content:center;line-height:1.35;}
+  .vs{align-self:center;flex:none;font-weight:800;color:var(--gold2);font-size:15px;padding:0 2px;}
+  .score-row{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:8px;}
+  .sbtn{
+    flex:none;width:52px;height:60px;border-radius:14px;border:2px solid var(--navy2);
+    background:#fff;color:var(--navy2);font-size:30px;font-weight:800;line-height:1;
+    cursor:pointer; touch-action:manipulation;
+    -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;
+  }
+  .sbtn:active{background:var(--navy2);color:#fff;}
+  .sbtn:disabled{opacity:.25;cursor:default;}
+  .score{
+    flex:1;min-width:0;font-size:36px;font-weight:800;color:var(--navy);text-align:center;
+    font-variant-numeric:tabular-nums;
+  }
+  .score.win{color:var(--gold2);}
+  .donebtn{
+    width:100%;margin-top:14px;padding:17px;border:none;border-radius:14px;
+    font-size:19px;font-weight:800;cursor:pointer;touch-action:manipulation;
+  }
+  .donebtn.confirm{background:var(--navy2);color:#fff;}
+  .donebtn.cancel{background:#fff;color:var(--navy2);border:2px solid var(--navy2);}
+  .edit-score-btn{width:100%;margin-top:10px;padding:14px 12px;border:2px solid var(--navy2);border-radius:14px;background:#fff;color:var(--navy2);font-size:18px;font-weight:800;cursor:pointer;touch-action:manipulation;}
+  .edit-score-btn:active{background:#e9eefb;}
+  dialog.score-dialog{width:min(94vw,440px);max-width:440px;padding:22px 18px;border:3px solid var(--gold);border-radius:20px;background:var(--cream);color:var(--ink);box-shadow:0 12px 40px rgba(0,0,0,.45);}
+  dialog.score-dialog::backdrop{background:rgba(5,14,30,.72);}
+  .score-dialog h2{margin:0 0 8px;text-align:center;color:var(--navy);font-size:24px;}
+  .score-dialog .dialog-help{text-align:center;margin:0 0 20px;font-size:17px;line-height:1.5;}
+  .score-inputs{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;}
+  .score-input-group{min-width:0;text-align:center;}
+  .score-input-group label{display:block;min-height:50px;font-size:16px;font-weight:700;line-height:1.35;}
+  .score-input-group input{width:100%;height:76px;border:3px solid var(--navy2);border-radius:14px;background:#fff;color:var(--navy);font-size:40px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;}
+  .score-dialog .dialog-vs{font-size:17px;font-weight:800;color:var(--gold2);}
+  .dialog-actions{display:flex;gap:10px;margin-top:22px;}
+  .dialog-actions button{flex:1;min-height:58px;border:0;border-radius:14px;font-size:19px;font-weight:800;cursor:pointer;touch-action:manipulation;}
+  .dialog-actions .cancel{background:#fff;color:var(--navy2);border:2px solid var(--navy2);}
+  .dialog-actions .save{background:var(--navy2);color:#fff;}
+  .chip{flex:1;padding:12px 0;border:2px solid var(--navy2);border-radius:12px;background:#fff;color:var(--navy2);font-size:17px;font-weight:800;cursor:pointer;touch-action:manipulation;}
+  .chip:active{background:#e9eefb;}
   .hint{text-align:center;color:#9fb0d0;font-size:13px;margin:6px 0 0;}
   table.rank{width:100%;border-collapse:collapse;font-size:17px;}
   table.rank th{background:var(--navy2);color:#fff;padding:10px 4px;font-size:15px;}
@@ -114,8 +214,8 @@
 <div class="wrap">
   <header class="top">
     <h1>KG클럽 60대 A조 친선대회</h1>
-    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">버전 1</div>
-    <div class="sub">2026.11.28 (토) 15:00 · 수도전기공고 체육관 1코트</div>
+    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">버전 1.1 · 2026-11-17</div>
+    <div class="sub">2026.11.28 (토) 15:00 · 하남 덕풍배드민턴클럽</div>
     <div class="upd" id="upd">최종 업데이트: 불러오는 중…</div>
     <div class="status"><span class="dot on" id="dot"></span><span id="stxt">연결됨</span></div>
   </header>
@@ -123,6 +223,7 @@
   <nav class="tabs">
     <button id="tab-m" class="active" onclick="showView('m')">경기 기록</button>
     <button id="tab-r" onclick="showView('r')">순위표</button>
+    <button id="tab-s" onclick="showView('s')">식대 정산</button>
   </nav>
 
   <dialog id="score-dialog" class="score-dialog" aria-labelledby="score-dialog-title">
@@ -147,10 +248,46 @@
   <section id="view-r" class="view">
     <div class="card">
       <table class="rank">
-        <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th><th>득점</th><th>실점</th><th>득실</th><th>배정금액</th></tr></thead>
+        <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th><th>득점</th><th>실점</th><th>득실</th><th>식대 부담금</th></tr></thead>
         <tbody id="rankbody"></tbody>
       </table>
-      <div class="ranknote">완료된 경기만 집계 · 순위 기준: 승수 → 승자승 → 득실차 → 총득점<br>배정금액: 총 500,000원을 순위별 배정 (1위도 납부, 순위가 낮을수록 많이)</div>
+      <div class="ranknote">완료된 경기만 집계 · 순위 기준: 승수 → 승자승 → 득실차 → 총득점<br>식대 부담금: '식대 정산' 탭의 총 식대 기준 자동 계산 (1위 1만원 고정, 6위 최대 10만원)</div>
+    </div>
+  </section>
+
+  <section id="view-s" class="view">
+    <div class="card">
+      <div class="mhead"><span class="mnum">식대 정산</span><span class="badge play">만원 단위</span></div>
+      <label for="meal-total" style="font-size:16px;font-weight:700;color:var(--navy2);">전체 식사금액 (원)</label>
+      <input id="meal-total" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1000"
+        style="width:100%;height:64px;margin-top:6px;border:3px solid var(--navy2);border-radius:14px;background:#fff;color:var(--navy);font-size:30px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;box-sizing:border-box;">
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button class="chip" onclick="setMeal(300000)">30만</button>
+        <button class="chip" onclick="setMeal(400000)">40만</button>
+        <button class="chip" onclick="setMeal(420000)">42만</button>
+        <button class="chip" onclick="setMeal(500000)">50만</button>
+      </div>
+      <div class="ranknote" style="text-align:left;margin-top:10px;">지금 보이는 420,000원은 테스트 금액이에요 (1인당 7만원 × 6명 가정). 실제 식대가 나오면 그 금액으로 바꿔 입력하세요. 입력한 금액은 이 기기에만 저장됩니다.</div>
+    </div>
+
+    <div class="card">
+      <div class="mhead"><span class="mnum">순위별 부담금</span></div>
+      <table class="rank">
+        <thead><tr><th>순위</th><th>부담금</th></tr></thead>
+        <tbody id="duebody"></tbody>
+      </table>
+      <div id="settle-summary" class="ranknote" style="text-align:left;"></div>
+      <div class="ranknote" style="text-align:left;">배분 방식: 1위 1만원 고정 · 6위 최대 10만원 · 2~6위는 2:3:4:5:6 비율 (참여와 친선 목적의 완만한 차등) · 만원 단위로 정합니다.</div>
+    </div>
+
+    <div class="card">
+      <div class="mhead"><span class="mnum">이름별 배정 (가나다 순)</span><span class="badge play" id="settle-state">-</span></div>
+      <table class="rank">
+        <thead><tr><th>이름</th><th>순위</th><th>부담금</th></tr></thead>
+        <tbody id="settlebody"></tbody>
+      </table>
+      <div id="settle-note" class="ranknote"></div>
+      <button class="edit-score-btn" id="copy-settle" onclick="copySettle()">결과 복사 (문자/카톡 붙여넣기용)</button>
     </div>
   </section>
 </div>
@@ -167,9 +304,11 @@ const MATCHES = [
   {id:"m5", a:["유재진","조성필"], b:["안재성","한승연"]},
   {id:"m6", a:["유재진","유현욱"], b:["김기환","조성필"]},
 ];
-// 순위별 배정금액 (단위: 원). 총 500,000원, 1위~6위 순서. 사용자 선택 후 ACTIVE_DUES를 1 또는 2로 확정.
-const DUES_OPTIONS = {1:[50000,60000,70000,90000,100000,130000], 2:[40000,50000,70000,90000,110000,140000]};
-const ACTIVE_DUES = 1; // 1안 확정: 1위 50,000 / 2위 60,000 / 3위 70,000 / 4위 90,000 / 5위 100,000 / 6위 130,000
+// 식대 정산 규칙 (2026-11-17 사용자 지시): 1위 1만원 고정, 6위 최대 10만원, 2~6위 비율 2:3:4:5:6, 만원 단위
+const DUE_WEIGHTS = [2,3,4,5,6]; // 2위~6위
+const DUE_FIRST = 1;  // 1위 고정 (만원)
+const DUE_CAP = 10;   // 6위 상한 (만원)
+const MEAL_KEY = "kgb60a-meal-total";
 const LS_KEY = "kgb60a-state";
 const CID_KEY = "kgb60a-cid";
 let clientId = localStorage.getItem(CID_KEY);
@@ -394,7 +533,7 @@ function renderMatches(){
   }).join("");
 }
 
-function renderRank(){
+function computeStandings(){
   const st = {};
   PLAYERS.forEach(p => st[p] = {name:p, w:0, l:0, pf:0, pa:0});
   MATCHES.forEach(x=>{
@@ -422,7 +561,8 @@ function renderRank(){
   function cmpBasic(a,b){
     const da=a.pf-a.pa, db=b.pf-b.pa;
     if(db!==da) return db-da;
-    return b.pf-a.pf;
+    if(b.pf!==a.pf) return b.pf-a.pf;
+    return a.name.localeCompare(b.name,'ko'); // 완전 동률이면 가나다 순
   }
   // 기본 정렬: 승수 → 득실차 → 총득점 (3명 이상 동률은 이 기준 그대로)
   const rows = Object.values(st).sort((a,b)=> (b.w-a.w) || cmpBasic(a,b));
@@ -434,11 +574,58 @@ function renderRank(){
       }
     }
   }
-  const dues = ACTIVE_DUES ? DUES_OPTIONS[ACTIVE_DUES] : null;
+  return rows;
+}
+
+// 만원 단위 정산: 총액(원) -> [1위..6위] 부담금(원)과 표시용 정보
+function computeSettlement(totalWon){
+  if(!isFinite(totalWon) || totalWon <= 0) return null;
+  const M = Math.round(totalWon/10000);
+  if(M < 6) return {error:"총액이 너무 적어 만원 단위 배분이 어려워요."};
+  const amounts = new Array(6).fill(0);
+  amounts[0] = DUE_FIRST;
+  let R = M - DUE_FIRST;
+  const capped = new Set();
+  while(true){
+    const act = [1,2,3,4,5].filter(i=>!capped.has(i));
+    if(act.length===0) break;
+    const wsum = act.reduce((s,i)=>s+DUE_WEIGHTS[i-1],0);
+    const raw = act.map(i=> R*DUE_WEIGHTS[i-1]/wsum);
+    const floors = raw.map(v=>Math.floor(v));
+    let rem = R - floors.reduce((a,b)=>a+b,0);
+    const order = act.map((_,k)=>k).sort((a,b)=> ((raw[b]-floors[b]) - (raw[a]-floors[a])) || (DUE_WEIGHTS[act[b]-1]-DUE_WEIGHTS[act[a]-1]));
+    const vals = {};
+    act.forEach((i,k)=> vals[i]=floors[k]);
+    for(let k=0;k<rem;k++) vals[act[order[k]]]++;
+    let any=false;
+    act.forEach(i=>{ if(vals[i] > DUE_CAP){ capped.add(i); amounts[i]=DUE_CAP; R -= DUE_CAP; any=true; } });
+    if(!any){ act.forEach(i=> amounts[i]=vals[i]); R = 0; break; }
+  }
+  const totalMan = amounts.reduce((a,b)=>a+b,0);
+  return {
+    amounts: amounts.map(v=>v*10000),
+    leftoverWon: R*10000,                 // 6위 상한 때문에 배분하지 못한 금액
+    diffWon: totalWon - totalMan*10000,   // 실제 총액과 배분 합계의 차이 (만원 미만 절사 포함)
+  };
+}
+
+function getMealTotal(){
+  const v = parseInt(localStorage.getItem(MEAL_KEY) || "420000", 10);
+  return isFinite(v) ? v : 420000;
+}
+function setMeal(v){
+  document.getElementById("meal-total").value = v;
+  localStorage.setItem(MEAL_KEY, String(v));
+  renderSettle(); renderRank();
+}
+
+function renderRank(){
+  const rows = computeStandings();
+  const settle = computeSettlement(getMealTotal());
   const medals = ["1위","2위","3위"];
   document.getElementById("rankbody").innerHTML = rows.map((r,i)=>{
     const diff = r.pf - r.pa;
-    const dueTxt = dues[i].toLocaleString("ko-KR") + "원";
+    const dueTxt = settle && !settle.error ? settle.amounts[i].toLocaleString("ko-KR") + "원" : "-";
     return `<tr class="${i===0?'r1':''}">
       <td><span class="rmedal">${medals[i]||(i+1)+"위"}</span></td>
       <td class="nm">${esc(r.name)}</td><td>${r.w}</td><td>${r.l}</td>
@@ -446,7 +633,80 @@ function renderRank(){
     </tr>`;
   }).join("");
 }
-function renderAll(){ renderMatches(); renderRank(); renderUpd(); }
+
+function renderSettle(){
+  const total = getMealTotal();
+  const settle = computeSettlement(total);
+  const rows = computeStandings();
+  const doneCount = MATCHES.filter(x=>state.matches[x.id].done).length;
+  const duebody = document.getElementById("duebody");
+  const summary = document.getElementById("settle-summary");
+  const body = document.getElementById("settlebody");
+  const note = document.getElementById("settle-note");
+  const badge = document.getElementById("settle-state");
+  if(!settle){ duebody.innerHTML = ""; summary.textContent = ""; body.innerHTML = ""; note.textContent = "총 식사금액을 입력해 주세요."; badge.textContent = "-"; return; }
+  if(settle.error){ duebody.innerHTML = ""; summary.textContent = settle.error; body.innerHTML = ""; note.textContent = ""; badge.textContent = "-"; return; }
+  duebody.innerHTML = settle.amounts.map((a,i)=>{
+    return `<tr class="${i===0?'r1':''}"><td><span class="rmedal">${i+1}위</span></td><td class="due">${a.toLocaleString("ko-KR")}원</td></tr>`;
+  }).join("");
+  const sum = settle.amounts.reduce((a,b)=>a+b,0);
+  let sTxt = `총 식대 ${total.toLocaleString("ko-KR")}원 · 배분 합계 ${sum.toLocaleString("ko-KR")}원`;
+  if(settle.diffWon !== 0){
+    sTxt += ` · 차액 ${settle.diffWon.toLocaleString("ko-KR")}원 (만원 단위로 맞추면서 생긴 차이로, 누구에게도 배정하지 않았어요. 현장에서 별도로 조정해 주세요)`;
+  } else {
+    sTxt += " · 합계가 정확히 일치해요";
+  }
+  if(settle.leftoverWon > 0){
+    sTxt += ` · 6위 상한(10만원) 때문에 배분하지 못한 ${settle.leftoverWon.toLocaleString("ko-KR")}원이 있어요. 총액이 크면 상한 조정이 필요합니다`;
+  }
+  summary.textContent = sTxt;
+  badge.textContent = doneCount===6 ? "최종 순위 기준" : (doneCount>0 ? `임시 (확정 ${doneCount}/6)` : "순위 미정");
+  if(doneCount===0){
+    body.innerHTML = "";
+    note.textContent = "확정된 경기가 없어 아직 이름별 배정이 없어요. 경기가 확정되면 현재 순위대로, 6경기가 모두 끝나면 최종 순위대로 자동 배정됩니다. 위 '순위별 부담금'이 순위가 정해졌을 때의 금액이에요.";
+    return;
+  }
+  const ganada = [...PLAYERS].sort((a,b)=>a.localeCompare(b,'ko'));
+  body.innerHTML = ganada.map(name=>{
+    const idx = rows.findIndex(r=>r.name===name);
+    const amt = idx>=0 ? settle.amounts[idx] : 0;
+    return `<tr><td class="nm">${esc(name)}</td><td>${idx>=0 ? (idx+1)+"위" : "-"}</td><td class="due">${amt.toLocaleString("ko-KR")}원</td></tr>`;
+  }).join("");
+  note.textContent = doneCount===6 ? "6경기 모두 확정된 최종 순위 기준이에요." : `아직 ${doneCount}/6경기만 확정된 임시 순위 기준이에요. 남은 경기가 끝나면 바뀔 수 있어요.`;
+}
+
+function copySettle(){
+  const total = getMealTotal();
+  const settle = computeSettlement(total);
+  if(!settle || settle.error) return;
+  const rows = computeStandings();
+  const doneCount = MATCHES.filter(x=>state.matches[x.id].done).length;
+  const lines = [];
+  lines.push(`KG클럽 60대 A조 친선대회 식대 정산 (총 ${total.toLocaleString("ko-KR")}원)`);
+  settle.amounts.forEach((a,i)=> lines.push(`${i+1}위: ${a.toLocaleString("ko-KR")}원`));
+  if(doneCount>0){
+    lines.push("");
+    const ganada = [...PLAYERS].sort((a,b)=>a.localeCompare(b,'ko'));
+    ganada.forEach(name=>{
+      const idx = rows.findIndex(r=>r.name===name);
+      if(idx>=0) lines.push(`${name} (${idx+1}위): ${settle.amounts[idx].toLocaleString("ko-KR")}원`);
+    });
+    lines.push(doneCount===6 ? "(최종 순위 기준)" : `(임시: ${doneCount}/6경기 확정 기준)`);
+  }
+  if(settle.diffWon!==0) lines.push(`* 배분 합계와 총액의 차액 ${settle.diffWon.toLocaleString("ko-KR")}원은 별도 조정`);
+  const btn = document.getElementById("copy-settle");
+  const done = ()=>{ btn.textContent = "복사했어요!"; setTimeout(()=>{ btn.textContent = "결과 복사 (문자/카톡 붙여넣기용)"; }, 1500); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(lines.join("\n")).then(done).catch(()=>{ fallbackCopy(lines.join("\n")); done(); });
+  }else{ fallbackCopy(lines.join("\n")); done(); }
+}
+function fallbackCopy(t){
+  const ta = document.createElement("textarea");
+  ta.value = t; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  document.body.removeChild(ta);
+}
+function renderAll(){ renderMatches(); renderRank(); renderSettle(); renderUpd(); }
 
 // +/− 버튼: 탭은 1점, 길게 누르면 자동 연속 입력 (점수판이 다시 그려져도 동작하도록 문서 레벨에서 처리)
 let holdT1=null, holdT2=null;
@@ -468,11 +728,22 @@ document.addEventListener("contextmenu", e=>{ if(e.target.closest(".sbtn")) e.pr
 function showView(v){
   document.getElementById("view-m").classList.toggle("active", v==="m");
   document.getElementById("view-r").classList.toggle("active", v==="r");
+  document.getElementById("view-s").classList.toggle("active", v==="s");
   document.getElementById("tab-m").classList.toggle("active", v==="m");
   document.getElementById("tab-r").classList.toggle("active", v==="r");
+  document.getElementById("tab-s").classList.toggle("active", v==="s");
   if(v==="r") renderRank();
+  if(v==="s") renderSettle();
 }
 if(location.hash === "#rank") showView("r");
+if(location.hash === "#settle") showView("s");
+
+document.getElementById("meal-total").value = getMealTotal();
+document.getElementById("meal-total").addEventListener("input", e=>{
+  const v = parseInt(e.target.value, 10);
+  localStorage.setItem(MEAL_KEY, String(isFinite(v)?v:0));
+  renderSettle(); renderRank();
+});
 
 renderAll();
 poll();
