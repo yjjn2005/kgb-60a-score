@@ -130,7 +130,7 @@
 <div class="wrap">
   <header class="top">
     <h1>KG클럽 60대 A조 친선대회</h1>
-    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.10 · 2026-11-17</div>
+    <div style="display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:#d4af37;border:1px solid #d4af37;border-radius:999px;padding:2px 10px;letter-spacing:.5px;">I · 버전 1.11 · 2026-11-17</div>
     <div class="sub">2026.11.28 (토) 15:00 · 하남 덕풍배드민턴클럽</div>
     <div class="upd" id="upd">최종 업데이트: 불러오는 중…</div>
     <div class="status"><span class="dot on" id="dot"></span><span id="stxt">연결됨</span></div>
@@ -200,6 +200,11 @@
   </section>
 
   <section id="view-s" class="view">
+    <div class="card" style="border:2px solid var(--gold);">
+      <div class="mhead"><span class="mnum">식대 배분 원칙</span></div>
+      <div id="due-principle" style="font-size:18px;line-height:1.6;color:var(--navy);font-weight:700;"></div>
+      <div style="font-size:14px;line-height:1.5;color:var(--muted);margin-top:10px;">최종 금액은 만원 단위로 조정하며, 만원 미만 끝전은 꼴찌가 부담해요. 조정 후에는 이론 비율과 차이가 날 수 있어요.</div>
+    </div>
     <div class="card">
       <div class="mhead"><span class="mnum">금액 정산 배분</span><span class="badge play">만원 단위</span></div>
       <label for="meal-total" style="font-size:16px;font-weight:700;color:var(--navy2);">전체 식사금액 (원)</label>
@@ -216,7 +221,6 @@
 
     <div class="card">
       <div class="mhead"><span class="mnum" id="duehead">순위별 부담금</span></div>
-      <div id="due-principle" class="ranknote" style="text-align:left;margin-top:0;"></div>
       <table class="rank">
         <thead><tr><th>순위</th><th>이론 비율</th><th>조정 부담금</th></tr></thead>
         <tbody id="duebody"></tbody>
@@ -422,7 +426,7 @@ function fmtTime(ts){
   if(!ts) return "-";
   return new Date(ts).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:true});
 }
-const APP_BUILD_TS = new Date("2026-11-17T21:45:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
+const APP_BUILD_TS = new Date("2026-11-17T21:49:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
 function renderUpd(){
   const ts = Math.max(state.updatedAt||0, APP_BUILD_TS);
   document.getElementById("upd").textContent = "최종 업데이트: " + fmtTime(ts) +
@@ -985,7 +989,9 @@ function renderRank(){
 }
 
 function renderSettle(){
-  document.getElementById("due-principle").textContent = duePrinciple();
+  document.getElementById("due-principle").innerHTML = modeN()===6
+    ? '<div>① 식대의 <b style="color:#7a5c00;">50%는 6명이 똑같이</b> 부담</div><div style="margin-top:8px;">② 나머지 <b style="color:#7a5c00;">50%는 순위별</b>로 추가 부담</div><div style="margin-top:4px;">1위→6위: <b>0:1:2:3:4:5</b></div><div style="margin-top:8px;font-size:16px;">1위도 균등 몫은 내고, <b>순위 추가분만 0원</b>이에요.<br>최종 이론 비율: <b>5:7:9:11:13:15</b></div>'
+    : duePrinciple();
   const mnote = document.getElementById("meal-note");
   const nGames = M().matches.length;
   document.getElementById("due-rule-note").innerHTML = `${dueRoundingNote()}<br>총액 상한 50만원 (초과 시 정산 차단) · 다승→승자승→승점→다득점이 모두 같으면 공동 순위로 해당 등수 금액을 합산해 똑같이 나눠요 (만원 단위보다 우선, 1원 잔여는 가나다 순).`;
