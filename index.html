@@ -326,7 +326,7 @@ function fmtTime(ts){
   if(!ts) return "-";
   return new Date(ts).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:true});
 }
-const APP_BUILD_TS = new Date("2026-11-17T19:02:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
+const APP_BUILD_TS = new Date("2026-11-17T19:06:00+09:00").getTime(); // 앱 배포(수정) 시각 - 점수 동기화 시각보다 오래됐으면 이 시각을 표시
 function renderUpd(){
   const ts = Math.max(state.updatedAt||0, APP_BUILD_TS);
   document.getElementById("upd").textContent = "최종 업데이트: " + fmtTime(ts) +
@@ -694,6 +694,15 @@ function tieGroupsOf(rows){
   }
   return groups;
 }
+// 순위 표시 라벨: 다승·승자승·승점·다득점이 모두 같은 완전 동률은 공동N위, 아니면 N위
+function rankLabels(rows){
+  const lbl = new Array(rows.length);
+  tieGroupsOf(rows).forEach(g=>{
+    const r0 = g[0]+1;
+    g.forEach(idx=> lbl[idx] = (g.length>1 ? "공동" : "") + r0 + "위");
+  });
+  return lbl;
+}
 // 완전 동률 그룹은 해당 등수 부담금을 합산해 원 단위로 균등 분할 (만원 단위 규칙보다 우선).
 // 나눠 떨어지지 않는 1원 잔여는 가나다 순 앞 사람부터 1원씩 더 부담.
 function adjustedAmounts(amounts, rows){
@@ -731,12 +740,13 @@ function setMeal(v){
 function renderRank(){
   const rows = computeStandings();
   const doneCount = MATCHES.filter(x=>state.matches[x.id].done).length;
+  const rankLbl = rankLabels(rows);
   document.getElementById("rankbody").innerHTML = orderedSlots().map(slot=>{
     const idx = rows.findIndex(r=>r.slot===slot);
     const r = rows[idx];
     const diff = r.pf - r.pa;
-    const rankTxt = doneCount>0 ? (idx+1)+"위" : "미정";
-    return `<tr class="${doneCount>0&&idx===0?'r1':''}">
+    const rankTxt = doneCount>0 ? rankLbl[idx] : "미정";
+    return `<tr class="${doneCount>0&&rankLbl[idx].endsWith("1위")?'r1':''}">
       <td class="nm">${esc(slotLabel(slot))}</td><td>${r.w}</td><td>${r.l}</td>
       <td>${r.pf}</td><td>${r.pa}</td><td>${diff>0?'+'+diff:diff}</td><td><span class="rmedal">${rankTxt}</span></td>
     </tr>`;
@@ -795,10 +805,11 @@ function renderSettle(){
     return;
   }
   const adj = adjustedAmounts(settle.amounts, rows);
+  const rankLbl2 = rankLabels(rows);
   body.innerHTML = orderedSlots().map(slot=>{
     const idx = rows.findIndex(r=>r.slot===slot);
     const amt = idx>=0 ? adj[idx] : 0;
-    return `<tr><td class="nm">${esc(slotLabel(slot))}</td><td>${idx>=0 ? (idx+1)+"위" : "-"}</td><td class="due">${amt.toLocaleString("ko-KR")}원</td></tr>`;
+    return `<tr><td class="nm">${esc(slotLabel(slot))}</td><td>${idx>=0 ? rankLbl2[idx] : "-"}</td><td class="due">${amt.toLocaleString("ko-KR")}원</td></tr>`;
   }).join("");
   const ties = tieGroupsOf(rows).filter(g=>g.length>1);
   note.textContent = "9경기 모두 확정된 최종 순위 기준이에요." + (ties.length===0 ? "" :
@@ -818,9 +829,10 @@ function settleText(){
   if(doneCount===9){
     lines.push("");
     const adj = adjustedAmounts(settle.amounts, rows);
+    const rankLbl3 = rankLabels(rows);
     orderedSlots().forEach(slot=>{
       const idx = rows.findIndex(r=>r.slot===slot);
-      if(idx>=0) lines.push(`${slotLabel(slot)} (${idx+1}위): ${adj[idx].toLocaleString("ko-KR")}원`);
+      if(idx>=0) lines.push(`${slotLabel(slot)} (${rankLbl3[idx]}): ${adj[idx].toLocaleString("ko-KR")}원`);
     });
     if(tieGroupsOf(rows).some(g=>g.length>1)) lines.push("* 성적 완전 동률은 해당 등수 금액을 합산해 똑같이 나눴어요 (만원 단위보다 우선, 1원 잔여는 가나다 순)");
     lines.push("(최종 순위 기준)");
